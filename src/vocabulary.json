@@ -1,0 +1,102 @@
+[
+  {
+    "dutch": "appel",
+    "english": "apple",
+    "examples": [
+      { "nl": "Ik eet een appel.", "en": "I am eating an apple." },
+      { "nl": "De appel is rood.", "en": "The apple is red." }
+    ],
+    "context": "Common fruit, used in many Dutch idioms.",
+    "partOfSpeech": "noun"
+  },
+  {
+    "dutch": "banaan",
+    "english": "banana",
+    "examples": [
+      { "nl": "De banaan is geel.", "en": "The banana is yellow." },
+      { "nl": "Ik koop een tros bananen.", "en": "I buy a bunch of bananas." }
+    ],
+    "context": "Popular snack fruit.",
+    "partOfSpeech": "noun"
+  },
+  {
+    "dutch": "peer",
+    "english": "pear",
+    "examples": [
+      { "nl": "De peer is sappig.", "en": "The pear is juicy." },
+      { "nl": "Ik schil een peer.", "en": "I am peeling a pear." }
+    ],
+    "context": "Often eaten raw or in desserts.",
+    "partOfSpeech": "noun"
+  },
+  {
+    "dutch": "druif",
+    "english": "grape",
+    "examples": [
+      { "nl": "Druiven groeien aan een tros.", "en": "Grapes grow in a bunch." },
+      { "nl": "Wijn wordt van druiven gemaakt.", "en": "Wine is made from grapes." }
+    ],
+    "context": "Used for eating and making wine.",
+    "partOfSpeech": "noun"
+  },
+  {
+    "dutch": "kers",
+    "english": "cherry",
+    "examples": [
+      { "nl": "De kers is zoet.", "en": "The cherry is sweet." },
+      { "nl": "Ik pluk kersen in de zomer.", "en": "I pick cherries in the summer." }
+    ],
+    "context": "Small, red fruit, often used in desserts.",
+    "partOfSpeech": "noun"
+  },
+  {
+    "dutch": "meloen",
+    "english": "melon",
+    "examples": [
+      { "nl": "De meloen is groot en sappig.", "en": "The melon is big and juicy." },
+      { "nl": "Watermeloen is mijn favoriet.", "en": "Watermelon is my favorite." }
+    ],
+    "context": "Includes types like watermelon and cantaloupe.",
+    "partOfSpeech": "noun"
+  },
+  {
+    "dutch": "perzik",
+    "english": "peach",
+    "examples": [
+      { "nl": "De perzik heeft een zachte schil.", "en": "The peach has a soft skin." },
+      { "nl": "Ik eet graag perziken in de zomer.", "en": "I like eating peaches in the summer." }
+    ],
+    "context": "Soft, sweet fruit with a pit.",
+    "partOfSpeech": "noun"
+  },
+  {
+    "dutch": "pruim",
+    "english": "plum",
+    "examples": [
+      { "nl": "De pruim is paars.", "en": "The plum is purple." },
+      { "nl": "Pruimen zijn gezond.", "en": "Plums are healthy." }
+    ],
+    "context": "Can be eaten fresh or dried (as prunes).",
+    "partOfSpeech": "noun"
+  },
+  {
+    "dutch": "aardbei",
+    "english": "strawberry",
+    "examples": [
+      { "nl": "Aardbeien zijn lekker met slagroom.", "en": "Strawberries are delicious with whipped cream." },
+      { "nl": "Ik pluk aardbeien op de boerderij.", "en": "I pick strawberries at the farm." }
+    ],
+    "context": "Popular in desserts and as a snack.",
+    "partOfSpeech": "noun"
+  },
+  {
+    "dutch": "citroen",
+    "english": "lemon",
+    "examples": [
+      { "nl": "Citroenen zijn zuur.", "en": "Lemons are sour." },
+      { "nl": "Ik gebruik citroen in de thee.", "en": "I use lemon in tea." }
+    ],
+    "context": "Used for juice and flavoring.",
+    "partOfSpeech": "noun"
+  }
+] 
