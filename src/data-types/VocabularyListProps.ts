@@ -1,7 +1,7 @@
-import { VocabularyItem } from './VocabularyItem';
-import { FrozenWord } from './FrozenWord';
+import { VocabularyItem } from "../types/vocabulary";
+import { FrozenWord } from "./FrozenWord";
 
 export interface VocabularyListProps {
   vocabulary: VocabularyItem[];
-  frozenWords: FrozenWord[];
-} 
+  // frozenWords: FrozenWord[];
+}

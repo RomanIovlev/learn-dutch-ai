@@ -1,4 +1,4 @@
-import type { VocabularyItem, AppData, LearningStats } from '../data-types';
+import type { VocabularyItem, AppData, LearningStats } from "../data-types";
 
 // Type declaration for webpack's require.context
 declare function require(id: string): any;
@@ -7,10 +7,14 @@ declare namespace require {
     keys(): string[];
     (id: string): any;
   }
-  function context(directory: string, useSubdirectories: boolean, regExp: RegExp): Context;
+  function context(
+    directory: string,
+    useSubdirectories: boolean,
+    regExp: RegExp
+  ): Context;
 }
 
-const DATA_FILE_NAME = 'dutch-learning-data.json';
+const DATA_FILE_NAME = "dutch-learning-data.json";
 
 export class DataManager {
   private static instance: DataManager;
@@ -36,41 +40,45 @@ export class DataManager {
 
     try {
       // Use webpack's require.context to dynamically import all .ts files from data folder
-      const dataContext = require.context('../data', false, /\.ts$/);
-      
+      const dataContext = require.context("../data", false, /\.ts$/);
+
       // Get all file names
       const dataFiles = dataContext.keys();
-      
+
       for (const filePath of dataFiles) {
         try {
           const module = dataContext(filePath);
-          
+
           // Extract all exported arrays of VocabularyItem from each module
-          Object.keys(module).forEach(exportKey => {
+          Object.keys(module).forEach((exportKey) => {
             const exportedData = module[exportKey];
-            
+
             // Check if it's an array of VocabularyItem objects
-            if (Array.isArray(exportedData) && 
-                exportedData.length > 0 && 
-                exportedData[0]?.dutch && 
-                exportedData[0]?.meanings) {
+            if (
+              Array.isArray(exportedData) &&
+              exportedData.length > 0 &&
+              exportedData[0]?.dutch &&
+              exportedData[0]?.meanings
+            ) {
               vocabularyData.push(...exportedData);
             }
           });
-          
         } catch (fileError) {
           console.warn(`Failed to load data file ${filePath}:`, fileError);
         }
       }
-      
     } catch (error) {
-      console.error('Error loading vocabulary data:', error);
+      console.error("Error loading vocabulary data:", error);
       // Fallback to empty array if dynamic loading fails
     }
 
     this.dynamicVocabulary = vocabularyData;
-    console.log(`Loaded ${vocabularyData.length} vocabulary items from ${this.dynamicVocabulary.length > 0 ? 'dynamic' : 'fallback'} sources`);
-    
+    console.log(
+      `Loaded ${vocabularyData.length} vocabulary items from ${
+        this.dynamicVocabulary.length > 0 ? "dynamic" : "fallback"
+      } sources`
+    );
+
     return vocabularyData;
   }
 
@@ -81,7 +89,7 @@ export class DataManager {
       totalIncorrect: 0,
       sessionCorrect: 0,
       sessionIncorrect: 0,
-      lastSessionDate: new Date().toISOString().split('T')[0]
+      lastSessionDate: new Date().toISOString().split("T")[0],
     };
   }
 
@@ -95,7 +103,7 @@ export class DataManager {
         return parsedData;
       }
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error("Error loading data:", error);
     }
 
     // Return default data if no saved data found
@@ -108,34 +116,37 @@ export class DataManager {
       this.data = data;
       localStorage.setItem(DATA_FILE_NAME, JSON.stringify(data, null, 2));
     } catch (error) {
-      console.error('Error saving data:', error);
+      console.error("Error saving data:", error);
     }
   }
 
   // Get default data structure
   private async getDefaultData(): Promise<AppData> {
     const vocabulary = await this.loadAllVocabularyData();
-    
+
     return {
       vocabulary,
       frozenWords: [],
       stats: this.getDefaultStats(),
-      version: '1.0.0'
+      version: "1.0.0",
     };
   }
 
   // Update vocabulary item rating for specific meaning
-  async updateWordRating(dutchWord: string, meaningIndex: number, change: number): Promise<void> {
-    if (!this.data) {
-      this.data = await this.loadData();
-    }
-
-    const wordIndex = this.data.vocabulary.findIndex(word => word.dutch === dutchWord);
-    if (wordIndex !== -1 && this.data.vocabulary[wordIndex].meanings[meaningIndex]) {
-      const currentRating = this.data.vocabulary[wordIndex].meanings[meaningIndex].rating;
-      this.data.vocabulary[wordIndex].meanings[meaningIndex].rating = Math.max(0, Math.min(15, currentRating + change));
-      await this.saveData(this.data);
-    }
+  async updateWordRating(
+    dutchWord: string,
+    meaningIndex: number,
+    change: number
+  ): Promise<void> {
+    // if (!this.data) {
+    //   this.data = await this.loadData();
+    // }
+    // const wordIndex = this.data.vocabulary.findIndex(word => word.dutch === dutchWord);
+    // if (wordIndex !== -1 && this.data.vocabulary[wordIndex].meanings[meaningIndex]) {
+    //   const currentRating = this.data.vocabulary[wordIndex].meanings[meaningIndex].rating;
+    //   this.data.vocabulary[wordIndex].meanings[meaningIndex].rating = Math.max(0, Math.min(15, currentRating + change));
+    //   await this.saveData(this.data);
+    // }
   }
 
   // Freeze a word
@@ -144,7 +155,9 @@ export class DataManager {
       this.data = await this.loadData();
     }
 
-    const existingIndex = this.data.frozenWords.findIndex(fw => fw.dutch === dutchWord);
+    const existingIndex = this.data.frozenWords.findIndex(
+      (fw) => fw.dutch === dutchWord
+    );
     if (existingIndex !== -1) {
       this.data.frozenWords[existingIndex].remainingTurns = 4;
     } else {
@@ -160,8 +173,8 @@ export class DataManager {
     }
 
     this.data.frozenWords = this.data.frozenWords
-      .map(fw => ({ ...fw, remainingTurns: fw.remainingTurns - 1 }))
-      .filter(fw => fw.remainingTurns > 0);
+      .map((fw) => ({ ...fw, remainingTurns: fw.remainingTurns - 1 }))
+      .filter((fw) => fw.remainingTurns > 0);
 
     await this.saveData(this.data);
   }
@@ -172,8 +185,8 @@ export class DataManager {
       this.data = await this.loadData();
     }
 
-    const today = new Date().toISOString().split('T')[0];
-    
+    const today = new Date().toISOString().split("T")[0];
+
     // Reset session stats if it's a new day
     if (this.data.stats.lastSessionDate !== today) {
       this.data.stats.sessionCorrect = 0;
@@ -205,14 +218,16 @@ export class DataManager {
   }
 
   // Get available words (not frozen)
-  async getAvailableWords(): Promise<VocabularyItem[]> {
-    if (!this.data) {
-      this.data = await this.loadData();
-    }
-
-    const frozenDutchWords = this.data.frozenWords.map(fw => fw.dutch);
-    const allVocabulary = await this.loadAllVocabularyData();
-    return allVocabulary.filter(word => !frozenDutchWords.includes(word.dutch));
+  async getAvailableWords() {
+    //: Promise<VocabularyItem[]>
+    // if (!this.data) {
+    //   this.data = await this.loadData();
+    // }
+    // const frozenDutchWords = this.data.frozenWords.map((fw) => fw.dutch);
+    // const allVocabulary = await this.loadAllVocabularyData();
+    // return allVocabulary.filter(
+    //   (word) => !frozenDutchWords.includes(word.dutch)
+    // );
   }
 
   // Export data for backup
@@ -233,11 +248,11 @@ export class DataManager {
         this.data = importedData;
         await this.saveData(importedData);
       } else {
-        throw new Error('Invalid data format');
+        throw new Error("Invalid data format");
       }
     } catch (error) {
-      console.error('Error importing data:', error);
+      console.error("Error importing data:", error);
       throw error;
     }
   }
-} 
+}
