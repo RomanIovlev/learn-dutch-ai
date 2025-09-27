@@ -152,9 +152,6 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
 
       // const random = Math.random();
 
-      console.log(index);
-      console.log(vocabulary);
-      console.log(vocabulary[0]);
       const selectedItem: VocabularyItem = { ...vocabulary[index] };
 
       // if (random < 0.2 && newItems.length > 0) {
@@ -176,7 +173,6 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
       // }
 
       setCurrentQuizItem(selectedItem);
-      console.log("Selected quiz item:", selectedItem);
       generateOptions(selectedItem);
       setSelectedAnswer(null);
       setShowResult(false);
@@ -316,8 +312,9 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
     }
   };
 
-  const handleUpdateResult = () => {
-    onUpdateRating(wordsRanks);
+  const handleUpdateResult = async () => {
+    await onUpdateRating(wordsRanks);
+    resetQuiz();
   };
 
   const flipCardStyle = {
