@@ -10,7 +10,7 @@ import { Search, X, Plus, Trash2 } from "lucide-react";
 
 const VocabularyList: React.FC<VocabularyListProps> = ({ userId }) => {
   const { userVocabulary, allWords, isLoading, handleUpdateUserVocabulary } =
-    useUserWords(userId);
+    useUserWords(userId, true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"alphabetical" | "rating">(
     "alphabetical"
@@ -711,6 +711,139 @@ const VocabularyItemCard = ({
                       )}
                     </div>
                   </div>
+
+                  {/* Grammatical Forms Section */}
+                  {(item.verb ||
+                    item.noun ||
+                    item.adjective ||
+                    item.numeral) && (
+                    <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100">
+                      <h5 className="font-semibold text-purple-700 mb-2 text-sm flex items-center gap-1">
+                        📚 Grammar Forms
+                      </h5>
+
+                      {/* Verb Forms */}
+                      {item.verb && (
+                        <div className="mb-3 last:mb-0">
+                          <div className="font-medium text-purple-600 text-xs mb-1">
+                            🔄 Verb Conjugation
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="space-y-1">
+                              <div>
+                                <span className="font-medium">Present:</span>
+                              </div>
+                              <div className="text-gray-600 text-xs">
+                                ik {item.verb.present.ik}
+                                <br />
+                                jij {item.verb.present.jij}
+                                <br />
+                                hij/zij {item.verb.present.hij}
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <div>
+                                <span className="font-medium">Past:</span>
+                              </div>
+                              <div className="text-gray-600 text-xs">
+                                sg: {item.verb.past.sg}
+                                <br />
+                                pl: {item.verb.past.pl}
+                              </div>
+                              <div>
+                                <span className="font-medium">Perfect:</span>
+                              </div>
+                              <div className="text-gray-600 text-xs">
+                                {item.verb.perfect.aux}{" "}
+                                {item.verb.perfect.participle}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Noun Forms */}
+                      {item.noun && (
+                        <div className="mb-3 last:mb-0">
+                          <div className="font-medium text-purple-600 text-xs mb-1">
+                            🏷️ Noun Forms
+                          </div>
+                          <div className="text-xs space-y-1">
+                            <div>
+                              <span className="font-medium">Article:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.noun.indefiniteArticle}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Plural:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.noun.plural}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Diminutive:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.noun.diminutive}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Adjective Forms */}
+                      {item.adjective && (
+                        <div className="mb-3 last:mb-0">
+                          <div className="font-medium text-purple-600 text-xs mb-1">
+                            ✨ Adjective Forms
+                          </div>
+                          <div className="text-xs space-y-1">
+                            <div>
+                              <span className="font-medium">De-form:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.adjective.deForm}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Comparative:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.adjective.comparison}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Superlative:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.adjective.superlative}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Numeral Forms */}
+                      {item.numeral && (
+                        <div className="mb-3 last:mb-0">
+                          <div className="font-medium text-purple-600 text-xs mb-1">
+                            🔢 Numeral Forms
+                          </div>
+                          <div className="text-xs space-y-1">
+                            <div>
+                              <span className="font-medium">Value:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.numeral.numericValue}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Ordinal:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.numeral.ordinalForm}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="mt-3 w-full h-1 bg-gray-200 rounded-full overflow-hidden">
                     <div
