@@ -4,19 +4,23 @@ import { WordRank } from "../data-types/VocabularyQuizProps";
 import {
   getUserQuizWords,
   prepareWord,
-  addUserWords,
-  deleteUserWords,
+  prepareWordExtended,
   updateUserWordsRank,
 } from "../services/words-service";
 
-export const useUserQuizWords = (userId: number) => {
+export const useUserQuizWords = (
+  userId: number,
+  isExtendedWords: boolean = false
+) => {
   const [quizWords, setQuizWords] = useState<VocabularyItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchQuizWords = () =>
     getUserQuizWords(userId, 15)
       .then((data) => {
-        const words = (data || []).map(prepareWord).sort((a, b) => a.id - b.id);
+        const words = (data || [])
+          .map(isExtendedWords ? prepareWordExtended : prepareWord)
+          .sort((a, b) => a.id - b.id);
         setQuizWords(words);
       })
       .finally(() => {
@@ -41,5 +45,5 @@ export const useUserQuizWords = (userId: number) => {
     await fetchQuizWords();
   };
 
-  return { quizWords, onUpdateUserWordsRanks };
+  return { quizWords, onUpdateUserWordsRanks, isLoading };
 };

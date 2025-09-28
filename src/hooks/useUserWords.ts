@@ -6,9 +6,13 @@ import {
   getAllWords,
   addUserWords,
   deleteUserWords,
+  prepareWordExtended,
 } from "../services/words-service";
 
-export const useUserWords = (userId: number) => {
+export const useUserWords = (
+  userId: number,
+  isExtendedWords: boolean = false
+) => {
   const [userVocabulary, setUserVocabulary] = useState<VocabularyItem[]>([]);
   const [allWords, setAllWords] = useState<VocabularyItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,7 +20,9 @@ export const useUserWords = (userId: number) => {
   const fetchUserWords = () =>
     getUserWords(userId)
       .then((data) => {
-        const words = (data || []).map(prepareWord);
+        const words = (data || []).map(
+          isExtendedWords ? prepareWordExtended : prepareWord
+        );
         setUserVocabulary(words);
       })
       .finally(() => {

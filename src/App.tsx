@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -8,12 +8,13 @@ import {
   useLocation,
 } from "react-router-dom";
 import "./App.css";
-import { VocabularyList, VocabularyQuiz } from "./components";
+import {
+  VocabularyList,
+  VocabularyQuiz,
+  VocabularyExercises,
+} from "./components";
 // VocabularyQuiz,
 import { DataManager } from "./utils/dataManager";
-import type { VocabularyItem, FrozenWord } from "./data-types";
-import { useUserWords } from "./hooks/useUserWords";
-import { WordRank } from "./data-types/VocabularyQuizProps";
 
 // Top Header Component with Dutch Learning branding and main navigation
 const AppHeader = () => {
@@ -43,6 +44,19 @@ const AppHeader = () => {
           >
             <span className="text-lg">📚</span>
             <span className="font-medium">Quiz Mode</span>
+          </NavLink>
+
+          <NavLink
+            to="/exercises"
+            className={({ isActive }) =>
+              `flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                isActive
+                  ? "bg-white/20 text-white shadow-md"
+                  : "text-white/80 hover:bg-white/10 hover:text-white"
+              }`
+            }
+          >
+            <span className="font-medium">More Exercises</span>
           </NavLink>
 
           <NavLink
@@ -182,83 +196,8 @@ const ConfigSidebar = ({
 };
 
 function App() {
-  // const [vocabulary, setVocabulary] = useState<VocabularyItem[]>([]);
-  // const [frozenWords, setFrozenWords] = useState<FrozenWord[]>([]);
-  // const [availableWords, setAvailableWords] = useState<VocabularyItem[]>([]);
-  // const [isLoading, setIsLoading] = useState(true);
   const [dataManager] = useState(() => DataManager.getInstance());
   const [userId, setUserId] = useState(1);
-
-  // const loadData = useCallback(async () => {
-  //   try {
-  //     setIsLoading(true);
-  //     const data = await dataManager.loadData();
-  //     setVocabulary(data.vocabulary);
-  //     setFrozenWords(data.frozenWords);
-  //     updateAvailableWords(data.vocabulary, data.frozenWords);
-  //   } catch (error) {
-  //     console.error("Error loading data:", error);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // }, [dataManager]);
-
-  // useEffect(() => {
-  //   loadData();
-  // }, [loadData]);
-
-  const updateAvailableWords = () =>
-    // vocab: VocabularyItem[],
-    // frozen: FrozenWord[]
-    {
-      // const frozenDutchWords = frozen.map((fw) => fw.dutch);
-      // const available = vocab.filter(
-      //   (word) => !frozenDutchWords.includes(word.dutch)
-      // );
-      // setAvailableWords(available);
-    };
-
-  // const handleUpdateRating = async (wordsRanks: WordRank[]) =>
-  //   // dutchWord: string,
-  //   // meaningIndex: number,
-  //   // change: number
-  //   {
-  //     // try {
-  //     //   await dataManager.updateWordRating(dutchWord, meaningIndex, change);
-  //     //   await dataManager.updateStats(change > 0);
-  //     //   // Refresh data
-  //     //   const currentData = dataManager.getCurrentData();
-  //     //   if (currentData) {
-  //     //     setVocabulary([...currentData.vocabulary]);
-  //     //   }
-  //     // } catch (error) {
-  //     //   console.error("Error updating rating:", error);
-  //     // }
-  //   };
-
-  const handleFreezeWord = async (dutchWord: string) => {
-    // try {
-    //   await dataManager.freezeWord(dutchWord);
-    //   // Refresh data
-    //   const data = await dataManager.loadData();
-    //   setFrozenWords(data.frozenWords);
-    //   updateAvailableWords(vocabulary, data.frozenWords);
-    // } catch (error) {
-    //   console.error("Error freezing word:", error);
-    // }
-  };
-
-  const handleDecreaseFreezeCounters = async () => {
-    // try {
-    //   await dataManager.decreaseFreezeCounters();
-    //   // Refresh data
-    //   const data = await dataManager.loadData();
-    //   setFrozenWords(data.frozenWords);
-    //   updateAvailableWords(vocabulary, data.frozenWords);
-    // } catch (error) {
-    //   console.error("Error decreasing freeze counters:", error);
-    // }
-  };
 
   const handleResetAllProgress = async () => {
     // try {
@@ -345,6 +284,10 @@ function App() {
               <Route
                 path="/quiz"
                 element={<VocabularyQuiz userId={userId} />}
+              />
+              <Route
+                path="/exercises"
+                element={<VocabularyExercises userId={userId} />}
               />
               <Route
                 path="/vocabulary"

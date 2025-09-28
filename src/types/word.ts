@@ -29,10 +29,46 @@ export type PartOfSpeech =
   | "numeral"
   | "article";
 
-export interface Verb {}
+export interface Verb {
+  infinitive: string;
+  present: {
+    ik: string;
+    jij: string;
+    u: string;
+    hij: string;
+    wij: string;
+  };
+  past: {
+    sg: string;
+    pl: string;
+  };
+  perfect: {
+    aux: string;
+    participle: string;
+  };
+  separable_prefix: null | string;
+  is_separable: boolean;
+  is_irregular: boolean;
+  is_strong_verb: boolean;
+  is_modal: boolean;
+}
 
-export interface Noun {}
+export interface Noun {
+  noun: string;
+  indefinite_article: string;
+  diminutive: string;
+  plural: string;
+}
 
-export interface Adjective {}
+export interface Adjective {
+  adjective: string;
+  de_form: string;
+  comparison: string;
+  superlative: string;
+}
 
-export interface Numeral {}
+export interface Numeral {
+  numeral: string;
+  numeric_value: number;
+  ordinal_form: string;
+}
