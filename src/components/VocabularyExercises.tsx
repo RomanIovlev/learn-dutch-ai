@@ -19,7 +19,11 @@ const VocabularyExercises: React.FC<VocabularyExercisesProps> = ({
     userId,
     true
   );
-  const { examples, isLoading: isExampleLoading } = useExampleSentences(userId);
+  const {
+    examples,
+    isLoading: isExampleLoading,
+    fetchSentences,
+  } = useExampleSentences(userId);
 
   const [wordsRanks, setWordsRanks] = useState<WordRank[]>([]);
   const [errorWords, setErrorWords] = useState<string[]>([]);
@@ -172,6 +176,8 @@ const VocabularyExercises: React.FC<VocabularyExercisesProps> = ({
     window.location.reload();
   };
 
+  const handleFetchNewExercises = () => fetchSentences();
+
   return (
     <div className="max-w-6xl mx-auto pb-16">
       {/* Loading Indicator */}
@@ -260,6 +266,8 @@ const VocabularyExercises: React.FC<VocabularyExercisesProps> = ({
             <FillGaps
               examples={examples}
               onVerifyResult={handleVerifyGapResults}
+              onFetchExamples={handleFetchNewExercises}
+              isLoading={isExampleLoading}
             />
           )}
         </>

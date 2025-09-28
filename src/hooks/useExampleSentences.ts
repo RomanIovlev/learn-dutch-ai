@@ -4,10 +4,11 @@ import { getExampleSentences } from "../services/words-service";
 
 export const useExampleSentences = (userId: number) => {
   const [examples, setExamples] = useState<ExampleSentence[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const fetchSentences = () =>
-    getExampleSentences(userId)
+  const fetchSentences = async () => {
+    setIsLoading(true);
+    return getExampleSentences(userId)
       .then((data) => {
         const newExamples = (data || []).map((word) => ({
           wordId: word.word_id,
@@ -20,13 +21,14 @@ export const useExampleSentences = (userId: number) => {
       .finally(() => {
         setIsLoading(false);
       });
+  };
 
   useEffect(() => {
     if (!userId) {
       return;
     }
-    fetchSentences();
+    // fetchSentences();
   }, [userId]);
 
-  return { examples, isLoading };
+  return { examples, isLoading, fetchSentences };
 };

@@ -5,7 +5,12 @@ import {
 } from "../data-types/VocabularyExercisesProps";
 import { CheckCircle } from "lucide-react";
 
-const FillGaps: React.FC<FillGapsProps> = ({ examples, onVerifyResult }) => {
+const FillGaps: React.FC<FillGapsProps> = ({
+  examples,
+  onVerifyResult,
+  onFetchExamples,
+  isLoading,
+}) => {
   const [gapExercises, setGapExercises] = useState<GapExercise[]>([]);
   const [shuffledExamples, setShuffledExamples] = useState<typeof examples>([]);
 
@@ -101,6 +106,13 @@ const FillGaps: React.FC<FillGapsProps> = ({ examples, onVerifyResult }) => {
           Add some vocabulary words with example sentences to practice gap
           filling exercises.
         </p>
+        <button
+          disabled={isLoading}
+          className="my-10 px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 focus:ring-4 focus:ring-purple-200 transition-all duration-200 transform hover:scale-105 shadow-lg disabled:cursor-none disabled:from-slate-500 disabled:to-slate-300"
+          onClick={onFetchExamples}
+        >
+          Generate exercises
+        </button>
       </div>
     );
   }

@@ -82,4 +82,6 @@ export interface FillGapsProps {
     exampleSentence: string;
   }>;
   onVerifyResult: (exercises: GapExercise[]) => void;
+  onFetchExamples: () => Promise<void>;
+  isLoading: boolean;
 }
