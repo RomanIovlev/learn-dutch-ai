@@ -18,7 +18,7 @@ import { WordRank } from "./data-types/VocabularyQuizProps";
 // Top Header Component with Dutch Learning branding and main navigation
 const AppHeader = () => {
   return (
-    <header className="bg-gradient-to-r from-orange-500 to-blue-600 text-white shadow-xl fixed top-0 left-0 right-0 z-50">
+    <header className="bg-gradient-to-r from-orange-500 to-blue-600 text-white shadow-xl fixed top-0 left-0 right-0  z-[9999]">
       <div className="flex items-center justify-between h-16 px-6">
         {/* Dutch Learning Branding */}
         <div className="flex items-center space-x-3">
@@ -188,7 +188,6 @@ function App() {
   // const [isLoading, setIsLoading] = useState(true);
   const [dataManager] = useState(() => DataManager.getInstance());
   const [userId, setUserId] = useState(1);
-  const { wordList, vocabulary, onUpdateUserWordsRanks } = useUserWords(userId);
 
   // const loadData = useCallback(async () => {
   //   try {
@@ -345,26 +344,11 @@ function App() {
               <Route path="/" element={<Navigate to="/quiz" replace />} />
               <Route
                 path="/quiz"
-                element={
-                  <VocabularyQuiz
-                    vocabulary={vocabulary}
-                    // availableWords={availableWords}
-                    onUpdateRating={onUpdateUserWordsRanks}
-                    // onFreezeWord={handleFreezeWord}
-                    // onDecreaseFreezeCounters={handleDecreaseFreezeCounters}
-                    // onResetRatings={handleResetAllProgress}
-                    // frozenWords={frozenWords}
-                  />
-                }
+                element={<VocabularyQuiz userId={userId} />}
               />
               <Route
                 path="/vocabulary"
-                element={
-                  <VocabularyList
-                    vocabulary={vocabulary}
-                    // frozenWords={frozenWords}
-                  />
-                }
+                element={<VocabularyList userId={userId} />}
               />
             </Routes>
           </div>

@@ -1,15 +1,7 @@
 export interface Word {
   id: number;
   meanings: Meaning[];
-  part_of_speech:
-    | "verb"
-    | "pronoun"
-    | "noun"
-    | "adjective"
-    | "conjunction"
-    | "adverb"
-    | "numerals"
-    | "article";
+  part_of_speech: PartOfSpeech;
   rank: number;
   word: string;
   verb_form?: Verb;
@@ -26,6 +18,16 @@ export interface Meaning {
   example?: string;
   example_translation?: string;
 }
+
+export type PartOfSpeech =
+  | "verb"
+  | "pronoun"
+  | "noun"
+  | "adjective"
+  | "conjunction"
+  | "adverb"
+  | "numeral"
+  | "article";
 
 export interface Verb {}
 
