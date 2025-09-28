@@ -63,3 +63,9 @@ export interface Numeral {
   numericValue: number;
   ordinalForm: string;
 }
+
+export interface ExampleSentence {
+  wordId: number;
+  word: string;
+  exampleSentence: string;
+}

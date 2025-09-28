@@ -2,10 +2,15 @@ import React, { useEffect, useState } from "react";
 import type { VocabularyExercisesProps } from "../data-types";
 import { useUserQuizWords } from "../hooks/useUserQuizWords";
 import FillExercises from "./FillExercises";
-import { FillExercise } from "../data-types/VocabularyExercisesProps";
+import FillGaps from "./FillGaps";
+import {
+  FillExercise,
+  GapExercise,
+} from "../data-types/VocabularyExercisesProps";
 import { WordRank } from "../data-types/VocabularyQuizProps";
 import { SuccessBanner, ErrorBanner } from "./ExerciseBanners";
 import { Send, RotateCcw, Loader2 } from "lucide-react";
+import { useExampleSentences } from "../hooks/useExampleSentences";
 
 const VocabularyExercises: React.FC<VocabularyExercisesProps> = ({
   userId,
@@ -14,6 +19,8 @@ const VocabularyExercises: React.FC<VocabularyExercisesProps> = ({
     userId,
     true
   );
+  const { examples, isLoading: isExampleLoading } = useExampleSentences(userId);
+
   const [wordsRanks, setWordsRanks] = useState<WordRank[]>([]);
   const [errorWords, setErrorWords] = useState<string[]>([]);
   const [showErrorBanner, setShowErrorBanner] = useState(false);
@@ -30,9 +37,43 @@ const VocabularyExercises: React.FC<VocabularyExercisesProps> = ({
     );
   }, [quizWords]);
 
-  const [exerciseForm] = useState<"fill_forms" | "fill_gaps_in_sentences">(
-    "fill_forms"
-  );
+  const [exerciseForm, setExerciseForm] = useState<
+    "fill_forms" | "fill_gaps_in_sentences"
+  >("fill_forms");
+
+  // Reset verification state when switching exercise types
+  const handleExerciseTypeChange = (
+    type: "fill_forms" | "fill_gaps_in_sentences"
+  ) => {
+    setExerciseForm(type);
+    setIsVerified(false);
+    setShowErrorBanner(false);
+    setShowSuccessBanner(false);
+    setErrorWords([]);
+  };
+
+  const handleVerifyGapResults = (exercises: GapExercise[]) => {
+    console.log(exercises);
+    // Compare wordsRanks with newWordRanks and find errors
+    const errorWordsList: string[] = [];
+    exercises.forEach((result) => {
+      // Check if user answer matches the expected word (case insensitive)
+      const answer = result.userAnswer.toLowerCase().trim();
+      const userExample = result.exampleSentence
+        .toLowerCase()
+        .replace(/_\w+_/g, `_${answer}_`);
+
+      const isCorrect = userExample === result.exampleSentence.toLowerCase();
+      if (!isCorrect) {
+        errorWordsList.push(result.word);
+      }
+    });
+
+    setErrorWords(errorWordsList);
+    setShowErrorBanner(errorWordsList.length > 0);
+    setShowSuccessBanner(errorWordsList.length === 0);
+    setIsVerified(true);
+  };
 
   const handleVerifyResults = (exercises: FillExercise[]) => {
     const newWordRanks = [...wordsRanks];
@@ -134,16 +175,17 @@ const VocabularyExercises: React.FC<VocabularyExercisesProps> = ({
   return (
     <div className="max-w-6xl mx-auto pb-16">
       {/* Loading Indicator */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
-            <p className="text-gray-600 font-medium">
-              Loading vocabulary exercises...
-            </p>
+      {isLoading ||
+        (exerciseForm === "fill_gaps_in_sentences" && isExampleLoading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+              <p className="text-gray-600 font-medium">
+                Loading vocabulary exercises...
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        ))}
 
       {!isLoading && (
         <>
@@ -157,6 +199,34 @@ const VocabularyExercises: React.FC<VocabularyExercisesProps> = ({
             onDismiss={() => setShowErrorBanner(false)}
             errorWords={errorWords}
           />
+
+          {/* Exercise Type Selector */}
+          <div className="mb-6 flex justify-center">
+            <div className="bg-white rounded-xl shadow-md border border-gray-100 p-2 flex gap-2">
+              <button
+                onClick={() => handleExerciseTypeChange("fill_forms")}
+                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  exerciseForm === "fill_forms"
+                    ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-md"
+                    : "text-gray-600 hover:text-indigo-600 hover:bg-gray-50"
+                }`}
+              >
+                📚 Fill Forms
+              </button>
+              <button
+                onClick={() =>
+                  handleExerciseTypeChange("fill_gaps_in_sentences")
+                }
+                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  exerciseForm === "fill_gaps_in_sentences"
+                    ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md"
+                    : "text-gray-600 hover:text-purple-600 hover:bg-gray-50"
+                }`}
+              >
+                📝 Fill Gaps
+              </button>
+            </div>
+          </div>
 
           {/* Action Buttons - Show after verification */}
           {isVerified && (
@@ -183,6 +253,13 @@ const VocabularyExercises: React.FC<VocabularyExercisesProps> = ({
             <FillExercises
               onVerifyResult={handleVerifyResults}
               quizWords={quizWords}
+            />
+          )}
+
+          {exerciseForm === "fill_gaps_in_sentences" && (
+            <FillGaps
+              examples={examples}
+              onVerifyResult={handleVerifyGapResults}
             />
           )}
         </>

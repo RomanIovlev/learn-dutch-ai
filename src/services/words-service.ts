@@ -1,5 +1,5 @@
 import { VocabularyItem } from "../data-types";
-import { Word } from "../types/word";
+import { ExampleSentenceFromAPI, Word } from "../types/word";
 
 const WORD_API_URL = "http://localhost:8000/api/v1/words";
 
@@ -59,6 +59,16 @@ export const deleteUserWords = (
 
 export const getAllWords = (): Promise<Word[]> =>
   fetch(`${WORD_API_URL}/list`).then((response) => response.json());
+
+export const getExampleSentences = (
+  userId: number,
+  limit: number = 10
+): Promise<ExampleSentenceFromAPI[]> =>
+  fetch(
+    `${WORD_API_URL}/senetences-with-user-words/${userId}?limit=${limit}`
+  ).then((response) => {
+    return response.json();
+  });
 
 export const prepareWordExtended = (word: Word): VocabularyItem => ({
   word: word.word,

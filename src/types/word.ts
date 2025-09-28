@@ -72,3 +72,9 @@ export interface Numeral {
   numeric_value: number;
   ordinal_form: string;
 }
+
+export interface ExampleSentenceFromAPI {
+  word_id: number;
+  word: string;
+  example_sentence: string;
+}

@@ -66,3 +66,20 @@ export type FillExercise = BaseExercise &
   Partial<VerbExercise> &
   Partial<AdjectiveExercise> &
   Partial<NumeralExercise>;
+
+// Gap Fill Exercise Types
+export interface GapExercise {
+  wordId: number;
+  word: string;
+  exampleSentence: string;
+  userAnswer: string;
+}
+
+export interface FillGapsProps {
+  examples: Array<{
+    wordId: number;
+    word: string;
+    exampleSentence: string;
+  }>;
+  onVerifyResult: (exercises: GapExercise[]) => void;
+}
