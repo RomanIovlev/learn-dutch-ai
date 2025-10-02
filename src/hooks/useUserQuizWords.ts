@@ -19,9 +19,12 @@ export const useUserQuizWords = (
     getUserQuizWords(userId, 15)
       .then((data) => {
         const words = (data || [])
-          .map(isExtendedWords ? prepareWordExtended : prepareWord)
-          .sort((a, b) => a.id - b.id);
-        setQuizWords(words);
+          .map(isExtendedWords ? prepareWordExtended : prepareWord);
+        // Deduplicate by ID - keep the first occurrence of each word
+        const uniqueWords = words.filter((word, index, array) => 
+          array.findIndex(w => w.id === word.id) === index
+        );
+        setQuizWords(uniqueWords.sort((a, b) => a.id - b.id));
       })
       .finally(() => {
         setIsLoading(false);

@@ -22,10 +22,25 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({ userId }) => {
   const [isCardFlipped, setIsCardFlipped] = useState(false);
   const [showChoices, setShowChoices] = useState(false);
   const [isEndOfList, setIsEndOfList] = useState(false);
+  const [validQuizWords, setValidQuizWords] = useState<VocabularyItem[]>([]);
 
   useEffect(() => {
     if (quizWords.length > 0) {
-      setCurrentQuizItem(quizWords[0]);
+      // Filter out words without valid meanings
+      const filteredWords = quizWords.filter(word => 
+        word && 
+        word.meanings && 
+        word.meanings.length > 0 && 
+        word.meanings.some(meaning => meaning && meaning.meaning && meaning.meaning.trim())
+      );
+      
+      setValidQuizWords(filteredWords);
+      
+      if (filteredWords.length > 0) {
+        setCurrentQuizItem(filteredWords[0]);
+      } else {
+        console.warn("No quiz words with valid meanings found");
+      }
     }
   }, [quizWords]);
 
@@ -34,21 +49,28 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({ userId }) => {
       console.warn("Invalid quiz item provided");
       return;
     }
-    const correctAnswer = item.meanings
-      .map((meaning) => meaning.meaning)
+    
+    // Filter out empty meanings and create correct answer
+    const validMeanings = item.meanings.filter(meaning => meaning && meaning.meaning && meaning.meaning.trim());
+    const correctAnswer = validMeanings
+      .map((meaning) => meaning.meaning.trim())
       .join(", ");
     const currentDutchWord = item.word;
 
     if (!correctAnswer || !currentDutchWord) {
-      console.warn("Missing required data in quiz item");
+      console.warn("Unexpected: word without valid meanings reached generateOptions", { 
+        word: currentDutchWord, 
+        meaningsCount: item.meanings.length, 
+        validMeaningsCount: validMeanings.length 
+      });
       return;
     }
 
     // Get all possible wrong answers from all meanings of all words
     // EXCLUDE all meanings from the same Dutch word to avoid confusion
     const allWrongAnswers: string[] = [];
-    if (quizWords && Array.isArray(quizWords)) {
-      quizWords.forEach((word) => {
+    if (validQuizWords && Array.isArray(validQuizWords)) {
+      validQuizWords.forEach((word) => {
         // Skip the current Dutch word entirely
         if (
           word &&
@@ -58,8 +80,8 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({ userId }) => {
           Array.isArray(word.meanings)
         ) {
           word.meanings.forEach((meaning) => {
-            if (meaning && meaning.meaning) {
-              allWrongAnswers.push(meaning.meaning);
+            if (meaning && meaning.meaning && meaning.meaning.trim()) {
+              allWrongAnswers.push(meaning.meaning.trim());
             }
           });
         }
@@ -90,17 +112,17 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({ userId }) => {
   const selectNewWord = useCallback(
     (index: number = 0) => {
       // Safety checks to prevent runtime errors
-      if (!quizWords || quizWords.length === 0) {
-        console.warn("No vocabulary data available");
+      if (!validQuizWords || validQuizWords.length === 0) {
+        console.warn("No valid vocabulary data available");
         return;
       }
 
-      if (index >= quizWords.length) {
+      if (index >= validQuizWords.length) {
         setIsEndOfList(true);
         return;
       }
 
-      const selectedItem: VocabularyItem = { ...quizWords[index] };
+      const selectedItem: VocabularyItem = { ...validQuizWords[index] };
 
       setCurrentQuizItem(selectedItem);
       generateOptions(selectedItem);
@@ -109,16 +131,16 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({ userId }) => {
       setIsCardFlipped(false);
       setShowChoices(true); // Show choices immediately
     },
-    [quizWords]
+    [validQuizWords]
   );
 
   useEffect(() => {
-    if (quizWords && quizWords.length > 0 && !isInitialized) {
+    if (validQuizWords && validQuizWords.length > 0 && !isInitialized) {
       // Only initialize the first word, don't freeze it yet
       selectNewWord(0);
       setIsInitialized(true);
     }
-  }, [quizWords, isInitialized, selectNewWord]);
+  }, [validQuizWords, isInitialized, selectNewWord]);
 
   const handleAnswerClick = async (answer: string) => {
     if (selectedAnswer || !currentQuizItem) return;
@@ -322,7 +344,7 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({ userId }) => {
                       .join(", ")}
                   </div>
                   <div className="text-lg opacity-90 mb-2">
-                    ({currentQuizItem.partOfSpeech})
+                    ({currentQuizItem.meanings[0]?.pos})
                   </div>
                   {/* <div className="text-base opacity-80 italic">
                 {currentQuizItem.meaning.context}
@@ -413,8 +435,8 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({ userId }) => {
               </div>
 
               {/* Examples */}
-              {currentQuizItem.meanings[0]?.example &&
-                currentQuizItem.meanings[0]?.exampleTranslation && (
+              {currentQuizItem.meanings[0]?.example_dutch &&
+                currentQuizItem.meanings[0]?.example_english && (
                   <div className="bg-gray-50 p-4 rounded-lg mb-4">
                     <h4 className="font-semibold text-gray-800 mb-3 text-lg">
                       Examples:
@@ -422,10 +444,10 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({ userId }) => {
                     {currentQuizItem.meanings?.map((example, index) => (
                       <div key={index} className="mb-3 last:mb-0">
                         <div className="text-indigo-700 font-medium">
-                          🇳🇱 {example.example}
+                          🇳🇱 {example.example_dutch}
                         </div>
                         <div className="text-gray-600">
-                          🇬🇧 {example.exampleTranslation}
+                          🇬🇧 {example.example_english}
                         </div>
                       </div>
                     ))}

@@ -77,7 +77,7 @@ const FillExercises: React.FC<FillExercisesProps> = ({
         const exercise: FillExercise = {
           id: word.id,
           word: word.word,
-          partOfSpeech: word.partOfSpeech,
+          partOfSpeech: word.meanings[0]?.pos || "noun",
         };
 
         if (word.noun) {
@@ -142,9 +142,9 @@ const FillExercises: React.FC<FillExercisesProps> = ({
 
   return (
     <>
-      {fillExercises.map((exercise) => (
+      {fillExercises.map((exercise, index) => (
         <div
-          key={exercise.id}
+          key={`exercise-${exercise.id}-${index}`}
           className="bg-white rounded-lg shadow-md p-6 mb-6 border border-gray-200"
         >
           <div className="mb-4">

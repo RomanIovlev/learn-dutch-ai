@@ -1,22 +1,22 @@
 export interface Word {
   id: number;
   meanings: Meaning[];
-  part_of_speech: PartOfSpeech;
   rank: number;
   word: string;
   verb_form?: Verb;
   noun_form?: Noun;
   adjective_form?: Adjective;
   numeral_form?: Numeral;
-  category: string;
 }
 
 export interface Meaning {
-  meaning: string;
   id: number;
+  pos: PartOfSpeech;
+  meaning: string;
   usage?: string;
-  example?: string;
-  example_translation?: string;
+  example_dutch?: string;
+  example_english?: string;
+  categories: string[];
 }
 
 export type PartOfSpeech =

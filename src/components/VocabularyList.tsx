@@ -9,7 +9,7 @@ import {
 import { Search, X, Plus, Trash2 } from "lucide-react";
 
 const VocabularyList: React.FC<VocabularyListProps> = ({ userId }) => {
-  const { userVocabulary, allWords, isLoading, handleUpdateUserVocabulary } =
+  const { userVocabulary, allWords, categories, isLoading, handleUpdateUserVocabulary } =
     useUserWords(userId, true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"alphabetical" | "rating">(
@@ -20,6 +20,7 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ userId }) => {
   const [wordPartOfSpeech, setWordPartOfSpeech] = useState<
     PartOfSpeech | "all"
   >("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
 
   const handleSetSelectedCard = useCallback((index: number | null) => {
@@ -29,15 +30,25 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ userId }) => {
   // Pre-calculate the vocabularies to use in useEffect
   const filteredUserVocabulary =
     userVocabulary && Array.isArray(userVocabulary)
-      ? userVocabulary.filter((item) => filterVocabularyItems(item, searchTerm))
+      ? userVocabulary.filter((item) => {
+          const matchesSearch = filterVocabularyItems(item, searchTerm);
+          const matchesCategory = selectedCategory === "all" || 
+            item.meanings.some(meaning => meaning.categories.includes(selectedCategory));
+          return matchesSearch && matchesCategory;
+        })
       : [];
 
   const filteredAllWords = (
     wordPartOfSpeech !== "all"
-      ? allWords.filter((word) => word.partOfSpeech === wordPartOfSpeech)
+      ? allWords.filter((word) => word.meanings.some(meaning => meaning.pos === wordPartOfSpeech))
       : [...allWords]
   )
-    .filter((item) => filterVocabularyItems(item, searchTerm))
+    .filter((item) => {
+      const matchesSearch = filterVocabularyItems(item, searchTerm);
+      const matchesCategory = selectedCategory === "all" || 
+        item.meanings.some(meaning => meaning.categories.includes(selectedCategory));
+      return matchesSearch && matchesCategory;
+    })
     .filter(
       (item) => !userVocabulary.find((userWord) => userWord.id === item.id)
     );
@@ -45,7 +56,7 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ userId }) => {
   const sortedUserVocabulary =
     wordPartOfSpeech !== "all"
       ? filteredUserVocabulary.filter(
-          (word) => word.partOfSpeech === wordPartOfSpeech
+          (word) => word.meanings.some(meaning => meaning.pos === wordPartOfSpeech)
         )
       : [...filteredUserVocabulary].sort((a, b) => {
           if (sortBy === "rating") {
@@ -293,12 +304,47 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ userId }) => {
         ))}
       </div>
 
+      {/* Category Filter */}
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">Filter by Category</h3>
+        <div className="flex flex-wrap gap-2">
+          <button
+            key="all"
+            className={`px-3 py-1 rounded-xl border border-purple-500 ${
+              selectedCategory === "all" ? "text-white" : "text-purple-500"
+            } ${
+              selectedCategory === "all"
+                ? "bg-gradient-to-r from-purple-400 to-purple-500"
+                : "bg-white"
+            }`}
+            onClick={() => setSelectedCategory("all")}
+          >
+            All Categories
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category}
+              className={`px-3 py-1 rounded-xl border border-purple-500 ${
+                selectedCategory === category ? "text-white" : "text-purple-500"
+              } ${
+                selectedCategory === category
+                  ? "bg-gradient-to-r from-purple-400 to-purple-500"
+                  : "bg-white"
+              }`}
+              onClick={() => setSelectedCategory(category)}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Vocabulary Grid with proper containment */}
       <div className="relative">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {sortedUserVocabulary.map((item, index) => (
             <VocabularyItemCard
-              key={item.id}
+              key={`user-${item.id}`}
               index={index}
               item={item}
               wordsToDelete={userWordsToDelete}
@@ -314,7 +360,7 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ userId }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAllWords.map((item, index) => (
             <VocabularyItemCard
-              key={item.id}
+              key={`all-${item.id}`}
               index={index}
               item={item}
               wordsToAdd={wordsToAdd}
@@ -513,11 +559,12 @@ const VocabularyItemCard = ({
   };
 
   const getWordCategories = (item: VocabularyItem) => {
-    if (!item) {
+    if (!item || !item.meanings) {
       return ["unknown"]; // Fallback category
     }
-    const categories = Array.from(new Set(item.category || "unknown"));
-    return categories;
+    const allCategories = item.meanings.flatMap(meaning => meaning.categories);
+    const uniqueCategories = Array.from(new Set(allCategories));
+    return uniqueCategories.length > 0 ? uniqueCategories : ["unknown"];
   };
 
   // Simplified safety checks
@@ -663,7 +710,7 @@ const VocabularyItemCard = ({
 
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-4">
-              <span className="text-2xl">{getCategoryIcon(item.category)}</span>
+              <span className="text-2xl">{getCategoryIcon(getWordCategories(item)[0])}</span>
               <h4 className="font-bold text-lg bg-gradient-to-r from-indigo-700 to-blue-600 bg-clip-text text-transparent">
                 {item.word}
               </h4>
@@ -690,23 +737,23 @@ const VocabularyItemCard = ({
 
                   <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
                     <span className="bg-gray-100 px-2 py-1 rounded-full font-medium">
-                      {item.partOfSpeech}
+                      {meaning.pos}
                     </span>
-                    {meaning.context && (
-                      <span className="italic">{meaning.context}</span>
+                    {meaning.usage && (
+                      <span className="italic">{meaning.usage}</span>
                     )}
                   </div>
 
                   <div className="space-y-2">
                     <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-3 rounded-lg border border-indigo-100">
-                      {meaning.example && (
+                      {meaning.example_dutch && (
                         <div className="text-indigo-700 font-semibold mb-1 text-sm">
-                          🇳🇱 {meaning.example}
+                          🇳🇱 {meaning.example_dutch}
                         </div>
                       )}
-                      {meaning.exampleTranslation && (
+                      {meaning.example_english && (
                         <div className="text-gray-700 text-sm">
-                          🇬🇧 {meaning.exampleTranslation}
+                          🇬🇧 {meaning.example_english}
                         </div>
                       )}
                     </div>

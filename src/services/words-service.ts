@@ -1,17 +1,17 @@
 import { VocabularyItem } from "../data-types";
-import { ExampleSentenceFromAPI, Word } from "../types/word";
+import { ExampleSentenceFromAPI, Word, Meaning, PartOfSpeech } from "../types/word";
 
 const WORD_API_URL = "http://localhost:8000/api/v1/words";
 
 export const getUserQuizWords = (
   userId: number,
   limit: number
-): Promise<Word[]> =>
+): Promise<APIWord[]> =>
   fetch(`${WORD_API_URL}/app-user/${userId}?limit=${limit}`).then((response) =>
     response.json()
   );
 
-export const getUserWords = (userId: number): Promise<Word[]> =>
+export const getUserWords = (userId: number): Promise<APIWord[]> =>
   fetch(`${WORD_API_URL}/app-user/${userId}`).then((response) =>
     response.json()
   );
@@ -19,6 +19,10 @@ export const getUserWords = (userId: number): Promise<Word[]> =>
 export interface APIWordRank {
   word_id: number;
   rank: number;
+}
+
+export interface APIWord extends Word {
+  // The API now returns the exact format we need, so we can use Word directly
 }
 
 export const updateUserWordsRank = (
@@ -36,7 +40,7 @@ export const updateUserWordsRank = (
 export const addUserWords = (
   userId: number,
   words: number[]
-): Promise<Word[]> =>
+): Promise<APIWord[]> =>
   fetch(`${WORD_API_URL}/list/${userId}`, {
     method: "POST",
     body: JSON.stringify({ words }),
@@ -48,7 +52,7 @@ export const addUserWords = (
 export const deleteUserWords = (
   userId: number,
   words: number[]
-): Promise<Word[]> =>
+): Promise<APIWord[]> =>
   fetch(`${WORD_API_URL}/list/${userId}`, {
     method: "DELETE",
     body: JSON.stringify({ words }),
@@ -57,8 +61,13 @@ export const deleteUserWords = (
     },
   }).then((response) => response.json());
 
-export const getAllWords = (): Promise<Word[]> =>
+export const getAllWords = (): Promise<APIWord[]> =>
   fetch(`${WORD_API_URL}/list`).then((response) => response.json());
+
+export const getAllCategories = (): Promise<string[]> =>
+  fetch(`${WORD_API_URL}/categories`)
+    .then((response) => response.json())
+    .then((data) => data.map((item: { category: string; id: number }) => item.category));
 
 export const getExampleSentences = (
   userId: number,
@@ -70,17 +79,18 @@ export const getExampleSentences = (
     return response.json();
   });
 
-export const prepareWordExtended = (word: Word): VocabularyItem => ({
+export const prepareWordExtended = (word: APIWord): VocabularyItem => ({
   word: word.word,
   id: word.id,
-  partOfSpeech: word.part_of_speech,
   rating: word.rank,
-  category: word.category,
   meanings: word.meanings.map((meaning) => ({
+    id: meaning.id,
+    pos: meaning.pos,
     meaning: meaning.meaning,
-    context: meaning.usage ?? "",
-    example: meaning.example ?? "",
-    exampleTranslation: meaning.example_translation ?? "",
+    usage: meaning.usage,
+    example_dutch: meaning.example_dutch,
+    example_english: meaning.example_english,
+    categories: meaning.categories,
   })),
   verb: word.verb_form
     ? {
@@ -120,16 +130,17 @@ export const prepareWordExtended = (word: Word): VocabularyItem => ({
     : undefined,
 });
 
-export const prepareWord = (word: Word): VocabularyItem => ({
+export const prepareWord = (word: APIWord): VocabularyItem => ({
   word: word.word,
   id: word.id,
-  partOfSpeech: word.part_of_speech,
   rating: word.rank,
-  category: word.category,
   meanings: word.meanings.map((meaning) => ({
+    id: meaning.id,
+    pos: meaning.pos,
     meaning: meaning.meaning,
-    context: meaning.usage ?? "",
-    example: meaning.example ?? "",
-    exampleTranslation: meaning.example_translation ?? "",
+    usage: meaning.usage,
+    example_dutch: meaning.example_dutch,
+    example_english: meaning.example_english,
+    categories: meaning.categories,
   })),
 });

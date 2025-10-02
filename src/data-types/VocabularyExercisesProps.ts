@@ -27,16 +27,17 @@ export interface PerfectTense {
 export interface BaseExercise {
   id: number;
   word: string;
-  partOfSpeech: PartOfSpeech;
 }
 
 export interface NounExercise extends BaseExercise {
+  partOfSpeech: PartOfSpeech;
   plural: string;
   diminutive: string;
   indefiniteArticle: string;
 }
 
 export interface VerbExercise extends BaseExercise {
+  partOfSpeech: PartOfSpeech;
   infinitive: string;
   present: PresentTense;
   past: PastTense;
@@ -49,6 +50,7 @@ export interface VerbExercise extends BaseExercise {
 }
 
 export interface AdjectiveExercise extends BaseExercise {
+  partOfSpeech: PartOfSpeech;
   adjective: string;
   deForm: string;
   comparison: string;
@@ -56,6 +58,7 @@ export interface AdjectiveExercise extends BaseExercise {
 }
 
 export interface NumeralExercise extends BaseExercise {
+  partOfSpeech: PartOfSpeech;
   numeral: string;
   numericValue: number;
   ordinalForm: string;

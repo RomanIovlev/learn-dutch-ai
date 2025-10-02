@@ -1,10 +1,13 @@
-import { Word } from "./word";
+import { PartOfSpeech } from "./word";
 
 export interface VocabularyMeaning {
+  id: number;
+  pos: PartOfSpeech;
   meaning: string;
-  example: string;
-  context: string;
-  exampleTranslation: string;
+  usage?: string;
+  example_dutch?: string;
+  example_english?: string;
+  categories: string[];
 }
 
 export interface VocabularyItem {
@@ -12,8 +15,6 @@ export interface VocabularyItem {
   meanings: VocabularyMeaning[];
   id: number;
   rating: number;
-  partOfSpeech: Word["part_of_speech"];
-  category: string;
   verb?: Verb;
   noun?: Noun;
   adjective?: Adjective;
