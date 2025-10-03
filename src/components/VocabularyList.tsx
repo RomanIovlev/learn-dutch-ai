@@ -1,99 +1,76 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import type { VocabularyListProps, VocabularyItem } from "../data-types";
+import { useUserWords } from "../hooks/useUserWords";
+import { PartOfSpeech } from "../types/word";
+import {
+  ALL_PARTS_OF_SPEECH,
+  filterVocabularyItems,
+} from "./vocabulary-config";
+import { Search, X, Plus, Trash2 } from "lucide-react";
+import { extractMeaningIdsFromWordIds } from "../services/words-service";
 
-const VocabularyList: React.FC<VocabularyListProps> = ({ vocabulary }) => {
+const VocabularyList: React.FC<VocabularyListProps> = ({ userId }) => {
+  const { userVocabulary, allWords, categories, isLoading, handleUpdateUserVocabulary } =
+    useUserWords(userId, true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"alphabetical" | "rating">(
     "alphabetical"
   );
+  const [wordsToAdd, setWordsToAdd] = useState<number[]>([]);
+  const [userWordsToDelete, setUserWordsToDelete] = useState<number[]>([]);
+  const [wordPartOfSpeech, setWordPartOfSpeech] = useState<
+    PartOfSpeech | "all"
+  >("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedCard, setSelectedCard] = useState<number | null>(null);
-  const [popupPosition, setPopupPosition] = useState({
-    x: 0,
-    y: 0,
-    direction: "right",
-  });
 
-  // Determine if popup should appear on left or right side
-  const getPopupDirection = (cardElement: HTMLDivElement) => {
-    const rect = cardElement.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const popupWidth = 448; // max-w-[28rem] = 448px
-
-    // Check if there's enough space to the right
-    const spaceRight = viewportWidth - rect.right;
-    const spaceLeft = rect.left;
-
-    // Prefer right side, but use left if not enough space on right and more space on left
-    if (spaceRight < popupWidth + 32 && spaceLeft > spaceRight) {
-      return "left";
-    }
-    return "right";
-  };
-
-  const handleCardClick = (
-    index: number,
-    event: React.MouseEvent<HTMLDivElement>
-  ) => {
-    if (selectedCard === index) {
-      // Close popup if clicking the same card
-      setSelectedCard(null);
-    } else {
-      // Open popup for clicked card
-      const cardElement = event.currentTarget;
-      const direction = getPopupDirection(cardElement);
-      setPopupPosition({ x: 0, y: 0, direction });
-      setSelectedCard(index);
-    }
-  };
-
-  // Close popup when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (selectedCard !== null && !target.closest("[data-card-container]")) {
-        setSelectedCard(null);
-      }
-    };
-
-    document.addEventListener("click", handleClickOutside);
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, [selectedCard]);
+  const handleSetSelectedCard = useCallback((index: number | null) => {
+    setSelectedCard(index);
+  }, []);
 
   // Pre-calculate the vocabularies to use in useEffect
-  const filteredVocabulary =
-    vocabulary && Array.isArray(vocabulary)
-      ? vocabulary.filter(
-          (item) =>
-            item &&
-            item.word &&
-            (item.word.toLowerCase().includes(searchTerm.toLowerCase()) ||
-              (item.meanings &&
-                Array.isArray(item.meanings) &&
-                item.meanings.some(
-                  (meaning) =>
-                    meaning &&
-                    meaning.meaning &&
-                    meaning.meaning
-                      .toLowerCase()
-                      .includes(searchTerm.toLowerCase())
-                )))
-        )
+  const filteredUserVocabulary =
+    userVocabulary && Array.isArray(userVocabulary)
+      ? userVocabulary.filter((item) => {
+          const matchesSearch = filterVocabularyItems(item, searchTerm);
+          const matchesCategory = selectedCategory === "all" || 
+            item.meanings.some(meaning => meaning.categories.includes(selectedCategory));
+          return matchesSearch && matchesCategory;
+        })
       : [];
 
-  const sortedVocabulary = [...filteredVocabulary].sort((a, b) => {
-    if (sortBy === "rating") {
-      // Sort by highest rating among all meanings
-      const aMaxRating = a.rating;
-      const bMaxRating = b.rating;
-      return bMaxRating - aMaxRating;
-    }
-    return (a.word || "").localeCompare(b.word || "");
-  });
+  const filteredAllWords = (
+    wordPartOfSpeech !== "all"
+      ? allWords.filter((word) => word.meanings.some(meaning => meaning.pos === wordPartOfSpeech))
+      : [...allWords]
+  )
+    .filter((item) => {
+      const matchesSearch = filterVocabularyItems(item, searchTerm);
+      const matchesCategory = selectedCategory === "all" || 
+        item.meanings.some(meaning => meaning.categories.includes(selectedCategory));
+      return matchesSearch && matchesCategory;
+    })
+    .filter(
+      (item) => !userVocabulary.find((userWord) => userWord.id === item.id)
+    );
+
+  const sortedUserVocabulary =
+    wordPartOfSpeech !== "all"
+      ? filteredUserVocabulary.filter(
+          (word) => word.meanings.some(meaning => meaning.pos === wordPartOfSpeech)
+        )
+      : [...filteredUserVocabulary].sort((a, b) => {
+          if (sortBy === "rating") {
+            // Sort by highest rating among all meanings
+            const aMaxRating = a.rating;
+            const bMaxRating = b.rating;
+            return bMaxRating - aMaxRating;
+          }
+          return (a.word || "").localeCompare(b.word || "");
+        });
 
   // Early return if vocabulary is not available
-  if (!vocabulary || !Array.isArray(vocabulary)) {
+  if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto">
         <div className="text-center p-8">
@@ -102,41 +79,6 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ vocabulary }) => {
       </div>
     );
   }
-
-  const getRatingColor = (rating: number = 0) => {
-    if (rating === 15) return "bg-green-100 text-green-800 border-green-200";
-    if (rating >= 10) return "bg-blue-100 text-blue-800 border-blue-200";
-    if (rating >= 5) return "bg-yellow-100 text-yellow-800 border-yellow-200";
-    if (rating >= 1) return "bg-orange-100 text-orange-800 border-orange-200";
-    return "bg-gray-100 text-gray-800 border-gray-200";
-  };
-
-  const getRatingLabel = (rating: number = 0) => {
-    if (rating === 15) return "✨ Known";
-    if (rating >= 10) return "🔥 Strong";
-    if (rating >= 5) return "📈 Learning";
-    if (rating >= 1) return "🌱 Weak";
-    return "🆕 New";
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "fruits":
-        return "🍎";
-      case "common":
-        return "⭐";
-      default:
-        return "📖";
-    }
-  };
-
-  const getWordCategories = (item: VocabularyItem) => {
-    if (!item) {
-      return ["unknown"]; // Fallback category
-    }
-    const categories = Array.from(new Set(item.category || "unknown"));
-    return categories;
-  };
 
   // Calculate stats for all meanings
   const calculateStats = () => {
@@ -147,8 +89,8 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ vocabulary }) => {
     let newMeanings = 0;
 
     // Safety check for vocabulary
-    if (vocabulary && Array.isArray(vocabulary)) {
-      vocabulary.forEach((word) => {
+    if (userVocabulary && Array.isArray(userVocabulary)) {
+      userVocabulary.forEach((word) => {
         if (word.rating === 15) knownMeanings++;
         else if (word.rating >= 10) strongMeanings++;
         else if (word.rating >= 5) learningMeanings++;
@@ -168,8 +110,37 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ vocabulary }) => {
 
   const stats = calculateStats();
 
+  const handleAddWord = (wordId: number) => {
+    setWordsToAdd(
+      wordsToAdd.includes(wordId)
+        ? wordsToAdd.filter((id) => id !== wordId)
+        : [...wordsToAdd, wordId]
+    );
+  };
+
+  const handleDeleteWord = (wordId: number) => {
+    setUserWordsToDelete(
+      userWordsToDelete.includes(wordId)
+        ? userWordsToDelete.filter((id) => id !== wordId)
+        : [...userWordsToDelete, wordId]
+    );
+  };
+
+  const handleChangeUserVocabulary = async () => {
+    // Convert word IDs to meaning IDs
+    const wordsToAddAsVocabulary = allWords.filter(word => wordsToAdd.includes(word.id));
+    const wordsToDeleteAsVocabulary = userVocabulary.filter(word => userWordsToDelete.includes(word.id));
+    
+    const meaningsToAdd = extractMeaningIdsFromWordIds(wordsToAddAsVocabulary);
+    const meaningsToDelete = extractMeaningIdsFromWordIds(wordsToDeleteAsVocabulary);
+    
+    await handleUpdateUserVocabulary(meaningsToAdd, meaningsToDelete);
+    setUserWordsToDelete([]);
+    setWordsToAdd([]);
+  };
+
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto pb-16">
       {/* Stats Dashboard */}
       <div className="bg-gradient-to-br from-white via-indigo-50 to-blue-50 rounded-2xl shadow-2xl border border-indigo-100 p-8 mb-8">
         <div className="text-center mb-6">
@@ -262,19 +233,7 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ vocabulary }) => {
               className="w-full px-6 py-4 pl-14 text-lg rounded-2xl border-2 border-gray-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 outline-none transition-all duration-300 bg-gray-50 focus:bg-white placeholder-gray-400"
             />
             <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-              <svg
-                className="h-6 w-6 text-indigo-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+              <Search className="h-6 w-6 text-indigo-400" />
             </div>
             {searchTerm && (
               <button
@@ -283,19 +242,7 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ vocabulary }) => {
                 title="Clear search"
                 aria-label="Clear search"
               >
-                <svg
-                  className="h-5 w-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <X className="h-5 w-5 text-gray-400" />
               </button>
             )}
           </div>
@@ -333,9 +280,9 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ vocabulary }) => {
             📚 Vocabulary Collection
           </h2>
           <p className="text-gray-500 mt-1">
-            {sortedVocabulary.length} words •{" "}
-            {filteredVocabulary.length !== vocabulary.length
-              ? `${filteredVocabulary.length} filtered`
+            {sortedUserVocabulary.length} words •{" "}
+            {sortedUserVocabulary.length !== userVocabulary.length
+              ? `${userVocabulary.length} filtered`
               : "All words"}
           </p>
         </div>
@@ -347,181 +294,130 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ vocabulary }) => {
         </div>
       </div>
 
-      {/* Vocabulary Grid with proper containment */}
-      <div className="relative">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {sortedVocabulary.map((item, index) => {
-            // Simplified safety checks
-            if (!item?.meanings?.[0]?.meaning) {
-              return null;
-            }
+      <div className="flex flex-wrap gap-2 my-4">
+        {[...ALL_PARTS_OF_SPEECH, "all"].map((part) => (
+          <button
+            key={part}
+            className={`capitalize px-2 rounded-xl border border-blue-500 ${
+              part === wordPartOfSpeech ? "text-white" : "text-blue-500"
+            } ${
+              part === wordPartOfSpeech
+                ? "bg-gradient-to-r from-indigo-400 to-blue-500"
+                : "bg-white"
+            }`}
+            onClick={() => setWordPartOfSpeech(part as PartOfSpeech | "all")}
+          >
+            {part}
+          </button>
+        ))}
+      </div>
 
-            const primaryMeaning = item.meanings[0];
-            const maxRating = Math.max(item.rating, 0);
-            // TODO do smth with categories
-            const categories = getWordCategories(item);
-
-            return (
-              <div
-                key={index}
-                className={`bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 relative cursor-pointer transform hover:-translate-y-1 border border-gray-100 overflow-visible group ${
-                  selectedCard === index
-                    ? "z-[9998] ring-2 ring-indigo-400 shadow-xl"
-                    : "z-10"
-                }`}
-                onClick={(event) => handleCardClick(index, event)}
-                data-card-container
-              >
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-400 via-blue-500 to-purple-500"></div>
-
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="text-2xl font-bold bg-gradient-to-r from-indigo-700 to-blue-600 bg-clip-text text-transparent mb-1">
-                        {item.word}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Click hint */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                    <div className="bg-black/80 text-white text-xs px-2 py-1 rounded-full font-medium">
-                      {selectedCard === index
-                        ? "Click to close"
-                        : "Click for details"}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="absolute bottom-0 left-0 w-full h-2">
-                  <div
-                    className="h-full bg-gradient-to-r from-indigo-400 to-blue-500 transition-all duration-500"
-                    style={{ width: `${(maxRating / 15) * 100}%` }}
-                  ></div>
-                </div>
-
-                {/* Enhanced Click Popover */}
-                {selectedCard === index && (
-                  <div
-                    className={`absolute z-[9999] bg-gradient-to-br from-white via-blue-50 to-indigo-50 border-2 border-indigo-200 rounded-2xl shadow-2xl p-6 min-w-96 max-w-[28rem] backdrop-blur-sm animate-in fade-in duration-200 ${
-                      popupPosition.direction === "left"
-                        ? "right-full top-0 mr-4"
-                        : "left-full top-0 ml-4"
-                    }`}
-                    style={{
-                      maxHeight: "calc(100vh - 100px)",
-                      overflowY: "auto",
-                    }}
-                    data-card-container
-                  >
-                    {/* Close button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedCard(null);
-                      }}
-                      className="absolute top-2 right-2 w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors text-gray-600 hover:text-gray-800 z-10"
-                      title="Close"
-                    >
-                      <svg
-                        className="w-3 h-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-
-                    <div
-                      className={`absolute top-6 w-4 h-4 bg-gradient-to-br from-white to-blue-50 border-2 border-indigo-200 transform rotate-45 ${
-                        popupPosition.direction === "left"
-                          ? "-right-2 border-r-0 border-b-0"
-                          : "-left-2 border-l-0 border-t-0"
-                      }`}
-                    ></div>
-
-                    <div className="mb-4">
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="text-2xl">
-                          {getCategoryIcon(item.category)}
-                        </span>
-                        <h4 className="font-bold text-lg bg-gradient-to-r from-indigo-700 to-blue-600 bg-clip-text text-transparent">
-                          {item.word}
-                        </h4>
-                      </div>
-
-                      <div className="space-y-4">
-                        {item.meanings.map((meaning, meaningIndex) => (
-                          <div
-                            key={meaningIndex}
-                            className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-indigo-100 hover:bg-white/90 transition-all duration-200"
-                          >
-                            <div className="flex items-center justify-between mb-3">
-                              <span className="font-semibold text-gray-800 text-lg">
-                                {meaning.meaning}
-                              </span>
-                              <div
-                                className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${getRatingColor(
-                                  item.rating
-                                )}`}
-                              >
-                                {item.rating}/15
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
-                              <span className="bg-gray-100 px-2 py-1 rounded-full font-medium">
-                                {item.partOfSpeech}
-                              </span>
-                              {meaning.context && (
-                                <span className="italic">
-                                  {meaning.context}
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="space-y-2">
-                              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-3 rounded-lg border border-indigo-100">
-                                {meaning.example && (
-                                  <div className="text-indigo-700 font-semibold mb-1 text-sm">
-                                    🇳🇱 {meaning.example}
-                                  </div>
-                                )}
-                                {meaning.exampleTranslation && (
-                                  <div className="text-gray-700 text-sm">
-                                    🇬🇧 {meaning.exampleTranslation}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="mt-3 w-full h-1 bg-gray-200 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-indigo-400 to-blue-500 transition-all duration-500"
-                                style={{
-                                  width: `${(item.rating / 15) * 100}%`,
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+      {/* Category Filter */}
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">Filter by Category</h3>
+        <div className="flex flex-wrap gap-2">
+          <button
+            key="all"
+            className={`px-3 py-1 rounded-xl border border-purple-500 ${
+              selectedCategory === "all" ? "text-white" : "text-purple-500"
+            } ${
+              selectedCategory === "all"
+                ? "bg-gradient-to-r from-purple-400 to-purple-500"
+                : "bg-white"
+            }`}
+            onClick={() => setSelectedCategory("all")}
+          >
+            All Categories
+          </button>
+          {categories.map((category) => (
+            <button
+              key={category}
+              className={`px-3 py-1 rounded-xl border border-purple-500 ${
+                selectedCategory === category ? "text-white" : "text-purple-500"
+              } ${
+                selectedCategory === category
+                  ? "bg-gradient-to-r from-purple-400 to-purple-500"
+                  : "bg-white"
+              }`}
+              onClick={() => setSelectedCategory(category)}
+            >
+              {category}
+            </button>
+          ))}
         </div>
       </div>
 
-      {sortedVocabulary.length === 0 && (
+      {/* Vocabulary Grid with proper containment */}
+      <div className="relative">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {sortedUserVocabulary.map((item, index) => (
+            <VocabularyItemCard
+              key={`user-${item.id}`}
+              index={index}
+              item={item}
+              wordsToDelete={userWordsToDelete}
+              onDeleteWord={handleDeleteWord}
+              selectedCard={selectedCard}
+              setSelectedCard={handleSetSelectedCard}
+            />
+          ))}
+        </div>
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent my-4">
+          📚 All vocabulary words
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredAllWords.map((item, index) => (
+            <VocabularyItemCard
+              key={`all-${item.id}`}
+              index={index}
+              item={item}
+              wordsToAdd={wordsToAdd}
+              onAddWord={handleAddWord}
+              selectedCard={selectedCard}
+              setSelectedCard={handleSetSelectedCard}
+            />
+          ))}
+        </div>
+        {(wordsToAdd.length > 0 || userWordsToDelete.length > 0) && (
+          <div className="fixed py-4 px-6 bottom-0 left-0 right-0 z-[9999] border-t-2 border-indigo-200 bg-gradient-to-br from-white via-indigo-50 to-blue-50 shadow-2xl backdrop-blur-sm">
+            <div className="max-w-6xl mx-auto flex items-center justify-center">
+              <button
+                onClick={handleChangeUserVocabulary}
+                className={`border-2 border-blue-300  flex items-center gap-3 px-6 py-3 font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105`}
+              >
+                {wordsToAdd.length > 0 && (
+                  <>
+                    <Plus className="w-5 h-5" />
+                    <span>
+                      Add {wordsToAdd.length} word
+                      {wordsToAdd.length === 1 ? "" : "s"} to vocabulary
+                    </span>
+                    <div className="bg-indigo-300 px-2 py-1 rounded-full text-sm font-bold">
+                      {wordsToAdd.length}
+                    </div>
+                  </>
+                )}
+
+                {userWordsToDelete.length > 0 && (
+                  <>
+                    <Trash2 className="w-5 h-5" />
+                    <span>
+                      Remove {userWordsToDelete.length} word
+                      {userWordsToDelete.length === 1 ? "" : "s"} from
+                      vocabulary
+                    </span>
+                    <div className="bg-indigo-300 px-2 py-1 rounded-full text-sm font-bold">
+                      {userWordsToDelete.length}
+                    </div>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {sortedUserVocabulary.length === 0 && (
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-12 text-center border-2 border-dashed border-gray-300">
           <div className="text-6xl mb-4">🔍</div>
           <h3 className="text-xl font-semibold text-gray-700 mb-2">
@@ -555,3 +451,469 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ vocabulary }) => {
 };
 
 export default VocabularyList;
+
+const VocabularyItemCard = ({
+  item,
+  index,
+  onDeleteWord,
+  wordsToDelete,
+  wordsToAdd,
+  onAddWord,
+  selectedCard,
+  setSelectedCard,
+}: {
+  item: VocabularyItem;
+  index: number;
+  wordsToDelete?: number[];
+  onDeleteWord?: (wordId: number) => void;
+  wordsToAdd?: number[];
+  onAddWord?: (wordId: number) => void;
+  selectedCard: number | null;
+  setSelectedCard: (index: number | null) => void;
+}) => {
+  const [popupPosition, setPopupPosition] = useState({
+    x: 0,
+    y: 0,
+    direction: "right",
+  });
+  const switchingRef = React.useRef(false);
+  // Determine if popup should appear on left or right side
+  const getPopupDirection = (cardElement: HTMLButtonElement) => {
+    const rect = cardElement.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const popupWidth = 448; // max-w-[28rem] = 448px
+
+    // Check if there's enough space to the right
+    const spaceRight = viewportWidth - rect.right;
+    const spaceLeft = rect.left;
+
+    // Prefer right side, but use left if not enough space on right and more space on left
+    if (spaceRight < popupWidth + 32 && spaceLeft > spaceRight) {
+      return "left";
+    }
+    return "right";
+  };
+
+  const handleCardClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    // Always close current popup first
+    if (selectedCard === item.id) {
+      // Close popup if clicking the same card
+      setSelectedCard(null);
+    } else {
+      // Store the element reference and set switching flag
+      const cardElement = event.currentTarget;
+      const direction = getPopupDirection(cardElement);
+      switchingRef.current = true;
+
+      // Close any open popup and open new one
+      setSelectedCard(null);
+      // Use setTimeout to ensure the state update completes before opening new popup
+      setTimeout(() => {
+        setPopupPosition({ x: 0, y: 0, direction });
+        setSelectedCard(item.id);
+        switchingRef.current = false;
+      }, 0);
+    }
+  };
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // Don't close if we're in the middle of switching cards
+      if (switchingRef.current) return;
+
+      // Check if click is outside both the card and the popup
+      if (
+        selectedCard !== null &&
+        !target.closest("[data-card-details]") &&
+        !target.closest("[data-card-container]")
+      ) {
+        setSelectedCard(null);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [selectedCard, setSelectedCard]);
+
+  const getRatingColor = (rating: number = 0) => {
+    if (rating === 15) return "bg-green-100 text-green-800 border-green-200";
+    if (rating >= 10) return "bg-blue-100 text-blue-800 border-blue-200";
+    if (rating >= 5) return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    if (rating >= 1) return "bg-orange-100 text-orange-800 border-orange-200";
+    return "bg-gray-100 text-gray-800 border-gray-200";
+  };
+
+  const getRatingLabel = (rating: number = 0) => {
+    if (rating === 15) return "✨ Known";
+    if (rating >= 10) return "🔥 Strong";
+    if (rating >= 5) return "📈 Learning";
+    if (rating >= 1) return "🌱 Weak";
+    return "🆕 New";
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case "fruits":
+        return "🍎";
+      case "common":
+        return "⭐";
+      default:
+        return "📖";
+    }
+  };
+
+  const getWordCategories = (item: VocabularyItem) => {
+    if (!item || !item.meanings) {
+      return ["unknown"]; // Fallback category
+    }
+    const allCategories = item.meanings.flatMap(meaning => meaning.categories);
+    const uniqueCategories = Array.from(new Set(allCategories));
+    return uniqueCategories.length > 0 ? uniqueCategories : ["unknown"];
+  };
+
+  // Simplified safety checks
+  if (!item?.meanings?.[0]?.meaning) {
+    return null;
+  }
+
+  const primaryMeaning = item.meanings[0];
+  const maxRating = Math.max(item.rating, 0);
+  // TODO do smth with categories
+  const categories = getWordCategories(item);
+
+  return (
+    <div
+      className={`bg-gradient-to-br from-white to-gray-50 rounded-sm shadow-lg hover:shadow-2xl transition-all duration-300 relative cursor-pointer transform hover:-translate-y-1 border overflow-visible group ${
+        wordsToDelete?.includes(item.id)
+          ? "border-red-300 bg-red-50/50"
+          : wordsToAdd?.includes(item.id)
+          ? "border-green-300 bg-green-50/50"
+          : "border-gray-100"
+      } ${
+        selectedCard === item.id ? "z-[9998] ring-indigo-400 shadow-xl" : "z-10"
+      }`}
+      data-card-details
+    >
+      <div
+        className={`absolute top-0 left-0 w-full h-1 ${
+          wordsToDelete?.includes(item.id)
+            ? "bg-gradient-to-r from-red-400 via-red-500 to-red-600"
+            : wordsToAdd?.includes(item.id)
+            ? "bg-gradient-to-r from-green-400 via-green-500 to-green-600"
+            : "bg-gradient-to-r from-indigo-400 via-blue-500 to-purple-500"
+        }`}
+      ></div>
+
+      <div className="p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <div className="font-bold bg-gradient-to-r from-indigo-700 to-blue-600 bg-clip-text text-transparent mb-1">
+              {item.word}
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-2 ml-2">
+            {/* Add/Remove from wordsToAdd - only show if not in wordsToDelete */}
+            {wordsToAdd && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddWord?.(item.id);
+                }}
+                className={`p-2 rounded-full transition-all duration-200 ${
+                  wordsToAdd?.includes(item.id)
+                    ? "bg-green-500 text-white shadow-lg"
+                    : "bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-600"
+                }`}
+                title={
+                  wordsToAdd?.includes(item.id)
+                    ? "Remove from add list"
+                    : "Add to add list"
+                }
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Delete button - only show if not in wordsToAdd */}
+            {wordsToDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteWord?.(item.id);
+                }}
+                className={`p-2 rounded-full transition-all duration-200 ${
+                  wordsToDelete?.includes(item.id)
+                    ? "bg-red-500 text-white shadow-lg"
+                    : "bg-gray-100 text-gray-600 hover:bg-red-100 hover:text-red-600"
+                }`}
+                title={
+                  wordsToDelete?.includes(item.id)
+                    ? "Remove from delete list"
+                    : "Add to delete list"
+                }
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Click hint */}
+        <button
+          onClick={(event) => {
+            event.stopPropagation();
+            handleCardClick(event);
+          }}
+          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/80 text-white text-xs px-2 py-1 rounded-full font-medium pointer-events-auto"
+        >
+          {selectedCard === item.id ? "Click to close" : "Click for details"}
+        </button>
+      </div>
+
+      <div className="absolute bottom-0 left-0 w-full h-2">
+        <div
+          className="h-full bg-gradient-to-r from-indigo-400 to-blue-500 transition-all duration-500"
+          style={{ width: `${(maxRating / 15) * 100}%` }}
+        ></div>
+      </div>
+
+      {/* Enhanced Click Popover */}
+      {selectedCard === item.id && (
+        <div
+          className={`absolute z-[9999] bg-gradient-to-br from-white via-blue-50 to-indigo-50 border-2 border-indigo-200 rounded-2xl shadow-2xl p-6 min-w-96 max-w-[28rem] backdrop-blur-sm animate-in fade-in duration-200 ${
+            popupPosition.direction === "left"
+              ? "right-full top-0 mr-4"
+              : "left-full top-0 ml-4"
+          }`}
+          style={{
+            maxHeight: "calc(100vh - 100px)",
+            overflowY: "auto",
+          }}
+          data-card-container
+        >
+          {/* Close button */}
+          <button
+            onClick={(e) => {
+              setSelectedCard(null);
+            }}
+            className="absolute top-2 right-2 w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center transition-colors text-gray-600 hover:text-gray-800 z-10"
+            title="Close"
+          >
+            <X className="w-3 h-3" />
+          </button>
+
+          <div
+            className={`absolute top-6 w-4 h-4 bg-gradient-to-br from-white to-blue-50 border-2 border-indigo-200 transform rotate-45 ${
+              popupPosition.direction === "left"
+                ? "-right-2 border-r-0 border-b-0"
+                : "-left-2 border-l-0 border-t-0"
+            }`}
+          ></div>
+
+          <div className="mb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-2xl">{getCategoryIcon(getWordCategories(item)[0])}</span>
+              <h4 className="font-bold text-lg bg-gradient-to-r from-indigo-700 to-blue-600 bg-clip-text text-transparent">
+                {item.word}
+              </h4>
+            </div>
+
+            <div className="space-y-4">
+              {item.meanings.map((meaning, meaningIndex) => (
+                <div
+                  key={meaningIndex}
+                  className="bg-white/70 backdrop-blur-sm rounded-xl p-4 border border-indigo-100 hover:bg-white/90 transition-all duration-200"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-semibold text-gray-800 text-lg">
+                      {meaning.meaning}
+                    </span>
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${getRatingColor(
+                        item.rating
+                      )}`}
+                    >
+                      {item.rating}/15
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
+                    <span className="bg-gray-100 px-2 py-1 rounded-full font-medium">
+                      {meaning.pos}
+                    </span>
+                    {meaning.usage && (
+                      <span className="italic">{meaning.usage}</span>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-3 rounded-lg border border-indigo-100">
+                      {meaning.example_dutch && (
+                        <div className="text-indigo-700 font-semibold mb-1 text-sm">
+                          🇳🇱 {meaning.example_dutch}
+                        </div>
+                      )}
+                      {meaning.example_english && (
+                        <div className="text-gray-700 text-sm">
+                          🇬🇧 {meaning.example_english}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Grammatical Forms Section */}
+                  {(item.verb ||
+                    item.noun ||
+                    item.adjective ||
+                    item.numeral) && (
+                    <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-100">
+                      <h5 className="font-semibold text-purple-700 mb-2 text-sm flex items-center gap-1">
+                        📚 Grammar Forms
+                      </h5>
+
+                      {/* Verb Forms */}
+                      {item.verb && (
+                        <div className="mb-3 last:mb-0">
+                          <div className="font-medium text-purple-600 text-xs mb-1">
+                            🔄 Verb Conjugation
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="space-y-1">
+                              <div>
+                                <span className="font-medium">Present:</span>
+                              </div>
+                              <div className="text-gray-600 text-xs">
+                                ik {item.verb.present.ik}
+                                <br />
+                                jij {item.verb.present.jij}
+                                <br />
+                                hij/zij {item.verb.present.hij}
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <div>
+                                <span className="font-medium">Past:</span>
+                              </div>
+                              <div className="text-gray-600 text-xs">
+                                sg: {item.verb.past.sg}
+                                <br />
+                                pl: {item.verb.past.pl}
+                              </div>
+                              <div>
+                                <span className="font-medium">Perfect:</span>
+                              </div>
+                              <div className="text-gray-600 text-xs">
+                                {item.verb.perfect.aux}{" "}
+                                {item.verb.perfect.participle}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Noun Forms */}
+                      {item.noun && (
+                        <div className="mb-3 last:mb-0">
+                          <div className="font-medium text-purple-600 text-xs mb-1">
+                            🏷️ Noun Forms
+                          </div>
+                          <div className="text-xs space-y-1">
+                            <div>
+                              <span className="font-medium">Article:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.noun.indefiniteArticle}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Plural:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.noun.plural}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Diminutive:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.noun.diminutive}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Adjective Forms */}
+                      {item.adjective && (
+                        <div className="mb-3 last:mb-0">
+                          <div className="font-medium text-purple-600 text-xs mb-1">
+                            ✨ Adjective Forms
+                          </div>
+                          <div className="text-xs space-y-1">
+                            <div>
+                              <span className="font-medium">De-form:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.adjective.deForm}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Comparative:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.adjective.comparison}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Superlative:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.adjective.superlative}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Numeral Forms */}
+                      {item.numeral && (
+                        <div className="mb-3 last:mb-0">
+                          <div className="font-medium text-purple-600 text-xs mb-1">
+                            🔢 Numeral Forms
+                          </div>
+                          <div className="text-xs space-y-1">
+                            <div>
+                              <span className="font-medium">Value:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.numeral.numericValue}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Ordinal:</span>{" "}
+                              <span className="text-gray-600">
+                                {item.numeral.ordinalForm}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-3 w-full h-1 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-indigo-400 to-blue-500 transition-all duration-500"
+                      style={{
+                        width: `${(item.rating / 15) * 100}%`,
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

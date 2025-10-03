@@ -1,27 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
-import type {
-  VocabularyQuizProps,
-  VocabularyMeaning,
-  VocabularyItem,
-} from "../data-types";
-import { Word } from "../types/word";
+import type { VocabularyQuizProps, VocabularyItem } from "../data-types";
 import { Stat, WordRank } from "../data-types/VocabularyQuizProps";
+import { useUserQuizWords } from "../hooks/useUserQuizWords";
 
-// interface QuizItem {
-//   word: VocabularyItem;
-// }
+const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({ userId }) => {
+  const { quizWords, onUpdateUserWordsRanks } = useUserQuizWords(userId);
 
-const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
-  vocabulary,
-  // availableWords,
-  onUpdateRating,
-  // onFreezeWord,
-  // onDecreaseFreezeCounters,
-  // onResetRatings,
-  // frozenWords,
-}) => {
   const [currentQuizItem, setCurrentQuizItem] = useState<VocabularyItem | null>(
-    vocabulary[0]
+    null
   );
   const [options, setOptions] = useState<string[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -36,28 +22,55 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
   const [isCardFlipped, setIsCardFlipped] = useState(false);
   const [showChoices, setShowChoices] = useState(false);
   const [isEndOfList, setIsEndOfList] = useState(false);
+  const [validQuizWords, setValidQuizWords] = useState<VocabularyItem[]>([]);
+
+  useEffect(() => {
+    if (quizWords.length > 0) {
+      // Filter out words without valid meanings
+      const filteredWords = quizWords.filter(word => 
+        word && 
+        word.meanings && 
+        word.meanings.length > 0 && 
+        word.meanings.some(meaning => meaning && meaning.meaning && meaning.meaning.trim())
+      );
+      
+      setValidQuizWords(filteredWords);
+      
+      if (filteredWords.length > 0) {
+        setCurrentQuizItem(filteredWords[0]);
+      } else {
+        console.warn("No quiz words with valid meanings found");
+      }
+    }
+  }, [quizWords]);
 
   const generateOptions = (item: VocabularyItem) => {
     if (!item || !item.meanings || !item.word) {
       console.warn("Invalid quiz item provided");
       return;
     }
-    console.log(item);
-    const correctAnswer = item.meanings
-      .map((meaning) => meaning.meaning)
+    
+    // Filter out empty meanings and create correct answer
+    const validMeanings = item.meanings.filter(meaning => meaning && meaning.meaning && meaning.meaning.trim());
+    const correctAnswer = validMeanings
+      .map((meaning) => meaning.meaning.trim())
       .join(", ");
     const currentDutchWord = item.word;
 
     if (!correctAnswer || !currentDutchWord) {
-      console.warn("Missing required data in quiz item");
+      console.warn("Unexpected: word without valid meanings reached generateOptions", { 
+        word: currentDutchWord, 
+        meaningsCount: item.meanings.length, 
+        validMeaningsCount: validMeanings.length 
+      });
       return;
     }
 
     // Get all possible wrong answers from all meanings of all words
     // EXCLUDE all meanings from the same Dutch word to avoid confusion
     const allWrongAnswers: string[] = [];
-    if (vocabulary && Array.isArray(vocabulary)) {
-      vocabulary.forEach((word) => {
+    if (validQuizWords && Array.isArray(validQuizWords)) {
+      validQuizWords.forEach((word) => {
         // Skip the current Dutch word entirely
         if (
           word &&
@@ -67,8 +80,8 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
           Array.isArray(word.meanings)
         ) {
           word.meanings.forEach((meaning) => {
-            if (meaning && meaning.meaning) {
-              allWrongAnswers.push(meaning.meaning);
+            if (meaning && meaning.meaning && meaning.meaning.trim()) {
+              allWrongAnswers.push(meaning.meaning.trim());
             }
           });
         }
@@ -98,79 +111,18 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
 
   const selectNewWord = useCallback(
     (index: number = 0) => {
-      // console.log("selectNewWord called with shouldFreeze:", shouldFreeze);
-
       // Safety checks to prevent runtime errors
-      if (!vocabulary || vocabulary.length === 0) {
-        console.warn("No vocabulary data available");
+      if (!validQuizWords || validQuizWords.length === 0) {
+        console.warn("No valid vocabulary data available");
         return;
       }
 
-      if (index >= vocabulary.length) {
+      if (index >= validQuizWords.length) {
         setIsEndOfList(true);
         return;
       }
 
-      // If no words are available, fall back to any word from vocabulary
-      // const wordsToChooseFrom =
-      //   availableWords && availableWords.length > 0
-      //     ? availableWords
-      //     : vocabulary;
-      // console.log("Words to choose from:", vocabulary.length);
-
-      // // Create a flat list of all word-meaning combinations with their ratings
-      // const allQuizItems: VocabularyItem[] = [];
-      // vocabulary.forEach((word) => {
-      //   // Safety check for word and meanings
-      //   if (word && word.meanings && Array.isArray(word.meanings)) {
-      //     word.meanings.forEach((meaning) => {
-      //       // Safety check for meaning
-      //       if (meaning) {
-      //         allQuizItems.push({ ...word });
-      //       }
-      //     });
-      //   }
-      // });
-
-      // // Check if we have any quiz items
-      // if (allQuizItems.length === 0) {
-      //   console.warn("No quiz items available");
-      //   return;
-      // }
-
-      // // Categorize by rating
-      // const newItems = allQuizItems.filter((item) => item.rating === 0);
-      // const highRated = allQuizItems.filter(
-      //   (item) => item.rating >= 10 && item.rating <= 14
-      // );
-      // const midRated = allQuizItems.filter(
-      //   (item) => item.rating >= 5 && item.rating <= 9
-      // );
-      // const lowRated = allQuizItems.filter(
-      //   (item) => item.rating >= 1 && item.rating <= 4
-      // );
-
-      // const random = Math.random();
-
-      const selectedItem: VocabularyItem = { ...vocabulary[index] };
-
-      // if (random < 0.2 && newItems.length > 0) {
-      //   // 20% chance for new meanings
-      //   selectedItem = newItems[Math.floor(Math.random() * newItems.length)];
-      // } else if (random < 0.6 && highRated.length > 0) {
-      //   // 40% chance for high-rated meanings (10-14)
-      //   selectedItem = highRated[Math.floor(Math.random() * highRated.length)];
-      // } else if (random < 0.9 && midRated.length > 0) {
-      //   // 30% chance for mid-rated meanings (5-9)
-      //   selectedItem = midRated[Math.floor(Math.random() * midRated.length)];
-      // } else if (lowRated.length > 0) {
-      //   // 10% chance for low-rated meanings (0-4)
-      //   selectedItem = lowRated[Math.floor(Math.random() * lowRated.length)];
-      // } else {
-      //   // Fallback to any item
-      //   selectedItem =
-      //     allQuizItems[Math.floor(Math.random() * allQuizItems.length)];
-      // }
+      const selectedItem: VocabularyItem = { ...validQuizWords[index] };
 
       setCurrentQuizItem(selectedItem);
       generateOptions(selectedItem);
@@ -178,30 +130,17 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
       setShowResult(false);
       setIsCardFlipped(false);
       setShowChoices(true); // Show choices immediately
-
-      // // Only freeze the word if it's not the initial load
-      // if (shouldFreeze) {
-      //   onFreezeWord(selectedItem.word.dutch);
-      // }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
-    [vocabulary]
+    [validQuizWords]
   );
 
   useEffect(() => {
-    console.log("useEffect check:", {
-      vocabulary: !!vocabulary,
-      vocabularyLength: vocabulary?.length,
-      isInitialized: isInitialized,
-    });
-
-    if (vocabulary && vocabulary.length > 0 && !isInitialized) {
-      console.log("Initializing quiz...");
+    if (validQuizWords && validQuizWords.length > 0 && !isInitialized) {
       // Only initialize the first word, don't freeze it yet
       selectNewWord(0);
       setIsInitialized(true);
     }
-  }, [vocabulary, isInitialized, selectNewWord]);
+  }, [validQuizWords, isInitialized, selectNewWord]);
 
   const handleAnswerClick = async (answer: string) => {
     if (selectedAnswer || !currentQuizItem) return;
@@ -226,9 +165,7 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
         ...wordsRanks,
         { wordId: currentQuizItem.id, rank: currentQuizItem.rating + 1 },
       ]);
-      // await onUpdateRating(currentQuizItem.word, currentQuizItem.id, 1);
     } else {
-      // await onUpdateRating(currentQuizItem.word, currentQuizItem.id, -3);
       setWordsRanks([
         ...wordsRanks,
         {
@@ -242,7 +179,7 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
     setStats((prev) => ({
       correct: isCorrect ? prev.correct + 1 : prev.correct,
       incorrect: !isCorrect ? prev.incorrect + 1 : prev.incorrect,
-      knownWords: vocabulary.reduce(
+      knownWords: quizWords.reduce(
         (count, word) => count + (word.rating === 15 ? 1 : 0), // meanings.filter((meaning) => meaning.rating === 15).length,
         0
       ),
@@ -250,16 +187,12 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
   };
 
   const nextWord = async (index: number) => {
-    // Decrease freeze counters for all frozen words and wait for completion
-    // await onDecreaseFreezeCounters();
-
     setTimeout(() => {
       selectNewWord(index); // This should freeze the new word
-    }, 1000);
+    });
   };
 
   const resetQuiz = async () => {
-    // await onResetRatings();
     setStats({ correct: 0, incorrect: 0, knownWords: 0 });
     setIsInitialized(false);
     setIsCardFlipped(false);
@@ -267,12 +200,10 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
     setShowResult(false);
     setIsEndOfList(false);
     setWordsRanks([]);
-    setTimeout(() => {
-      if (vocabulary.length > 0) {
-        selectNewWord(0); // Don't freeze on reset
-        setIsInitialized(true);
-      }
-    }, 100);
+    if (quizWords.length > 0) {
+      selectNewWord(0);
+      setIsInitialized(true);
+    }
   };
 
   const getOptionClass = (option: string) => {
@@ -293,36 +224,34 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
   };
 
   const getTotalKnownWords = () => {
-    return vocabulary.reduce(
+    return quizWords.reduce(
       (count, word) => count + (word.rating === 15 ? 1 : 0),
       0
     );
   };
 
-  if (!currentQuizItem || !vocabulary || vocabulary.length === 0) {
+  if (!currentQuizItem || !quizWords || quizWords.length === 0) {
     return <div className="text-center">Loading...</div>;
   }
 
   const handleContainerClick = () => {
-    const index = vocabulary.findIndex(
-      (item) => item.id === currentQuizItem.id
-    );
+    const index = quizWords.findIndex((item) => item.id === currentQuizItem.id);
     if (showResult) {
       nextWord(index + 1);
     }
   };
 
   const handleUpdateResult = async () => {
-    await onUpdateRating(wordsRanks);
+    await onUpdateUserWordsRanks(wordsRanks);
     resetQuiz();
   };
 
   const flipCardStyle = {
     backgroundColor: "transparent",
     perspective: "1000px",
-    width: "286px", // Standard card ratio 5:7 (400px * 5/7 ≈ 286px)
+    width: "500px", // Standard card ratio 5:7 (400px * 5/7 ≈ 286px)
     height: "400px",
-    margin: "0 auto", // Center the card
+    margin: "16px auto", // Center the card
   };
 
   const flipCardInnerStyle = {
@@ -415,7 +344,7 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
                       .join(", ")}
                   </div>
                   <div className="text-lg opacity-90 mb-2">
-                    ({currentQuizItem.partOfSpeech})
+                    ({currentQuizItem.meanings[0]?.pos})
                   </div>
                   {/* <div className="text-base opacity-80 italic">
                 {currentQuizItem.meaning.context}
@@ -506,8 +435,8 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
               </div>
 
               {/* Examples */}
-              {currentQuizItem.meanings[0]?.example &&
-                currentQuizItem.meanings[0]?.exampleTranslation && (
+              {currentQuizItem.meanings[0]?.example_dutch &&
+                currentQuizItem.meanings[0]?.example_english && (
                   <div className="bg-gray-50 p-4 rounded-lg mb-4">
                     <h4 className="font-semibold text-gray-800 mb-3 text-lg">
                       Examples:
@@ -515,39 +444,15 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({
                     {currentQuizItem.meanings?.map((example, index) => (
                       <div key={index} className="mb-3 last:mb-0">
                         <div className="text-indigo-700 font-medium">
-                          🇳🇱 {example.example}
+                          🇳🇱 {example.example_dutch}
                         </div>
                         <div className="text-gray-600">
-                          🇬🇧 {example.exampleTranslation}
+                          🇬🇧 {example.example_english}
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-
-              {/* Show other meanings if available */}
-              {/* {currentQuizItem.meanings?.length > 1 && (
-            <div className="bg-blue-50 p-4 rounded-lg mb-4">
-              <h4 className="font-semibold text-blue-800 mb-3 text-lg">
-                Other meanings of "{currentQuizItem.word}":
-              </h4>
-              {currentQuizItem.meanings
-                // .filter((_, index) => index !== currentQuizItem.meaningIndex)
-                ?.map((meaning, index) => (
-                  <div key={index} className="mb-2 last:mb-0">
-                    <span className="font-medium text-blue-700">
-                      {meaning.meaning}
-                    </span>
-                    <span className="text-blue-600 ml-2">
-                      ({currentQuizItem.partOfSpeech})
-                    </span>
-                    <span className="text-blue-500 ml-2">
-                      - {meaning.context}
-                    </span>
-                  </div>
-                ))}
-            </div>
-          )} */}
 
               {/* Click to continue indicator */}
               <div className="text-center text-gray-500 mt-6">
