@@ -152,7 +152,7 @@ const FillGaps: React.FC<FillGapsProps> = ({
       <div className="space-y-4 mb-8">
         {examples.map((example, index) => (
           <div
-            key={example.wordId}
+            key={example.exampleSentence}
             className="bg-white rounded-xl shadow-md border border-gray-100 p-6 hover:shadow-lg transition-shadow duration-200"
           >
             <div className="flex items-start gap-4">
