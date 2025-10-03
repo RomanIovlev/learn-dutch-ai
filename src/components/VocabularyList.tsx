@@ -7,6 +7,7 @@ import {
   filterVocabularyItems,
 } from "./vocabulary-config";
 import { Search, X, Plus, Trash2 } from "lucide-react";
+import { extractMeaningIdsFromWordIds } from "../services/words-service";
 
 const VocabularyList: React.FC<VocabularyListProps> = ({ userId }) => {
   const { userVocabulary, allWords, categories, isLoading, handleUpdateUserVocabulary } =
@@ -126,7 +127,14 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ userId }) => {
   };
 
   const handleChangeUserVocabulary = async () => {
-    await handleUpdateUserVocabulary(wordsToAdd, userWordsToDelete);
+    // Convert word IDs to meaning IDs
+    const wordsToAddAsVocabulary = allWords.filter(word => wordsToAdd.includes(word.id));
+    const wordsToDeleteAsVocabulary = userVocabulary.filter(word => userWordsToDelete.includes(word.id));
+    
+    const meaningsToAdd = extractMeaningIdsFromWordIds(wordsToAddAsVocabulary);
+    const meaningsToDelete = extractMeaningIdsFromWordIds(wordsToDeleteAsVocabulary);
+    
+    await handleUpdateUserVocabulary(meaningsToAdd, meaningsToDelete);
     setUserWordsToDelete([]);
     setWordsToAdd([]);
   };

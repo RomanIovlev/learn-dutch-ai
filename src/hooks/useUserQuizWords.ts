@@ -3,9 +3,8 @@ import { VocabularyItem } from "../data-types";
 import { WordRank } from "../data-types/VocabularyQuizProps";
 import {
   getUserQuizWords,
-  prepareWord,
-  prepareWordExtended,
   updateUserWordsRank,
+  transformApiWordToVocabularyItem,
 } from "../services/words-service";
 
 export const useUserQuizWords = (
@@ -19,7 +18,7 @@ export const useUserQuizWords = (
     getUserQuizWords(userId, 15)
       .then((data) => {
         const words = (data || [])
-          .map(isExtendedWords ? prepareWordExtended : prepareWord);
+          .map(transformApiWordToVocabularyItem);
         // Deduplicate by ID - keep the first occurrence of each word
         const uniqueWords = words.filter((word, index, array) => 
           array.findIndex(w => w.id === word.id) === index
@@ -39,7 +38,7 @@ export const useUserQuizWords = (
 
   const onUpdateUserWordsRanks = async (items: WordRank[]) => {
     const apiItems = items.map((item) => ({
-      word_id: item.wordId,
+      meaning_id: item.wordId,
       rank: item.rank,
     }));
     const result = await updateUserWordsRank(userId, apiItems);

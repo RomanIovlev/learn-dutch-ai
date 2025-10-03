@@ -2,12 +2,11 @@ import { useEffect, useState } from "react";
 import { VocabularyItem } from "../data-types";
 import {
   getUserWords,
-  prepareWord,
   getAllWords,
   addUserWords,
   deleteUserWords,
-  prepareWordExtended,
   getAllCategories,
+  transformApiWordToVocabularyItem,
 } from "../services/words-service";
 
 export const useUserWords = (
@@ -22,9 +21,7 @@ export const useUserWords = (
   const fetchUserWords = () =>
     getUserWords(userId)
       .then((data) => {
-        const words = (data || []).map(
-          isExtendedWords ? prepareWordExtended : prepareWord
-        );
+        const words = (data || []).map(transformApiWordToVocabularyItem);
         // Deduplicate by ID - keep the first occurrence of each word
         const uniqueWords = words.filter((word, index, array) => 
           array.findIndex(w => w.id === word.id) === index
@@ -42,7 +39,7 @@ export const useUserWords = (
   const fetchAllUserWords = () =>
     getAllWords()
       .then((data) => {
-        const words = (data || []).map(prepareWord);
+        const words = (data || []).map(transformApiWordToVocabularyItem);
         // Deduplicate by ID - keep the first occurrence of each word
         const uniqueWords = words.filter((word, index, array) => 
           array.findIndex(w => w.id === word.id) === index
@@ -77,14 +74,14 @@ export const useUserWords = (
   }, [userId]);
 
   const handleUpdateUserVocabulary = async (
-    wordsToAdd: number[],
-    wordsToDelete: number[]
+    meaningsToAdd: number[],
+    meaningsToDelete: number[]
   ) => {
-    if (wordsToAdd.length > 0) {
-      await addUserWords(userId, wordsToAdd);
+    if (meaningsToAdd.length > 0) {
+      await addUserWords(userId, meaningsToAdd);
     }
-    if (wordsToDelete.length > 0) {
-      await deleteUserWords(userId, wordsToDelete);
+    if (meaningsToDelete.length > 0) {
+      await deleteUserWords(userId, meaningsToDelete);
     }
     await fetchUserWords();
   };
