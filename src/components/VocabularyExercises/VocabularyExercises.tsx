@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from "react";
-import type { VocabularyExercisesProps } from "../data-types";
-import { useUserQuizWords } from "../hooks/useUserQuizWords";
+import type { VocabularyExercisesProps } from "../../data-types";
+import { useUserQuizWords } from "../../hooks/useUserQuizWords";
 import FillExercises from "./FillExercises";
 import FillGaps from "./FillGaps";
+import Loading from "../Loading";
 import {
   FillExercise,
   GapExercise,
-} from "../data-types/VocabularyExercisesProps";
-import { WordRank } from "../data-types/VocabularyQuizProps";
-import { SuccessBanner, ErrorBanner } from "./ExerciseBanners";
-import { Send, RotateCcw, Loader2 } from "lucide-react";
-import { useExampleSentences } from "../hooks/useExampleSentences";
+} from "../../data-types/VocabularyExercisesProps";
+import { WordRank } from "../../data-types/VocabularyQuizProps";
+import { ExerciseBanner } from "./ExerciseBanner";
+import { useExampleSentences } from "../../hooks/useExampleSentences";
+import { Actions } from "../Actions";
+import { ExerciseSelector } from "./ExerciseSelector";
 
 const VocabularyExercises: React.FC<VocabularyExercisesProps> = ({
   userId,
@@ -57,7 +59,6 @@ const VocabularyExercises: React.FC<VocabularyExercisesProps> = ({
   };
 
   const handleVerifyGapResults = (exercises: GapExercise[]) => {
-    console.log(exercises);
     // Compare wordsRanks with newWordRanks and find errors
     const errorWordsList: string[] = [];
     exercises.forEach((result) => {
@@ -183,77 +184,28 @@ const VocabularyExercises: React.FC<VocabularyExercisesProps> = ({
       {/* Loading Indicator */}
       {isLoading ||
         (exerciseForm === "fill_gaps_in_sentences" && isExampleLoading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
-              <p className="text-gray-600 font-medium">
-                Loading vocabulary exercises...
-              </p>
-            </div>
-          </div>
+          <Loading message="Loading vocabulary exercises..." />
         ))}
 
       {!isLoading && (
         <>
-          <SuccessBanner
+          <ExerciseBanner
+            bannerType="success"
             isVisible={showSuccessBanner}
             onDismiss={() => setShowSuccessBanner(false)}
           />
 
-          <ErrorBanner
+          <ExerciseBanner
+            bannerType="error"
             isVisible={showErrorBanner}
             onDismiss={() => setShowErrorBanner(false)}
-            errorWords={errorWords}
+            words={errorWords}
           />
 
-          {/* Exercise Type Selector */}
-          <div className="mb-6 flex justify-center">
-            <div className="bg-white rounded-xl shadow-md border border-gray-100 p-2 flex gap-2">
-              <button
-                onClick={() => handleExerciseTypeChange("fill_forms")}
-                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                  exerciseForm === "fill_forms"
-                    ? "bg-gradient-to-r from-indigo-500 to-blue-500 text-white shadow-md"
-                    : "text-gray-600 hover:text-indigo-600 hover:bg-gray-50"
-                }`}
-              >
-                📚 Fill Forms
-              </button>
-              <button
-                onClick={() =>
-                  handleExerciseTypeChange("fill_gaps_in_sentences")
-                }
-                className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-                  exerciseForm === "fill_gaps_in_sentences"
-                    ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md"
-                    : "text-gray-600 hover:text-purple-600 hover:bg-gray-50"
-                }`}
-              >
-                📝 Fill Gaps
-              </button>
-            </div>
-          </div>
-
-          {/* Action Buttons - Show after verification */}
-          {isVerified && (
-            <div className="mb-6 flex justify-center gap-4">
-              <button
-                onClick={handleSendResults}
-                className="px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200 flex items-center gap-2"
-              >
-                <Send className="h-5 w-5" />
-                Send Results
-              </button>
-
-              <button
-                onClick={handleResetResults}
-                className="px-6 py-3 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200 flex items-center gap-2"
-              >
-                <RotateCcw className="h-5 w-5" />
-                Reset Results
-              </button>
-            </div>
-          )}
+          <ExerciseSelector
+            exerciseForm={exerciseForm}
+            onExerciseTypeChange={handleExerciseTypeChange}
+          />
 
           {exerciseForm === "fill_forms" && (
             <FillExercises
@@ -270,6 +222,12 @@ const VocabularyExercises: React.FC<VocabularyExercisesProps> = ({
               isLoading={isExampleLoading}
             />
           )}
+
+          <Actions
+            isShowApply={isVerified}
+            onResetQuiz={handleResetResults}
+            onUpdateResult={handleSendResults}
+          />
         </>
       )}
     </div>

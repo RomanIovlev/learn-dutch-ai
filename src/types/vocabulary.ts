@@ -69,3 +69,7 @@ export interface ExampleSentence {
   word: string;
   exampleSentence: string;
 }
+
+export type SortOption = "alphabetical" | "rating";
+
+export type SelectorType = "fill_forms" | "fill_gaps_in_sentences";

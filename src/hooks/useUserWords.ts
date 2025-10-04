@@ -2,12 +2,11 @@ import { useEffect, useState } from "react";
 import { VocabularyItem } from "../data-types";
 import {
   getUserWords,
-  prepareWord,
   getAllWords,
   addUserWords,
   deleteUserWords,
-  prepareWordExtended,
 } from "../services/words-service";
+import { wordTransform } from "../services/WordTransform";
 
 export const useUserWords = (
   userId: number,
@@ -21,7 +20,9 @@ export const useUserWords = (
     getUserWords(userId)
       .then((data) => {
         const words = (data || []).map(
-          isExtendedWords ? prepareWordExtended : prepareWord
+          isExtendedWords
+            ? wordTransform.prepareWordExtended
+            : wordTransform.prepareWord
         );
         setUserVocabulary(words);
       })
@@ -32,7 +33,7 @@ export const useUserWords = (
   const fetchAllUserWords = () =>
     getAllWords()
       .then((data) => {
-        const words = (data || []).map(prepareWord);
+        const words = (data || []).map(wordTransform.prepareWord);
         setAllWords(words);
       })
       .finally(() => {

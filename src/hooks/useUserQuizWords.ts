@@ -3,10 +3,9 @@ import { VocabularyItem } from "../data-types";
 import { WordRank } from "../data-types/VocabularyQuizProps";
 import {
   getUserQuizWords,
-  prepareWord,
-  prepareWordExtended,
   updateUserWordsRank,
 } from "../services/words-service";
+import { wordTransform } from "../services/WordTransform";
 
 export const useUserQuizWords = (
   userId: number,
@@ -19,7 +18,11 @@ export const useUserQuizWords = (
     getUserQuizWords(userId, 15)
       .then((data) => {
         const words = (data || [])
-          .map(isExtendedWords ? prepareWordExtended : prepareWord)
+          .map(
+            isExtendedWords
+              ? wordTransform.prepareWordExtended
+              : wordTransform.prepareWord
+          )
           .sort((a, b) => a.id - b.id);
         setQuizWords(words);
       })
