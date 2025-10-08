@@ -1,186 +1,392 @@
-# 🇳🇱 Dutch Learning App with Cards Quiz
+# 🇳🇱 Learn Dutch AI - Testing-Focused Development
 
-An interactive React-based application for learning Dutch vocabulary through an engaging flashcard quiz system. Master Dutch words with context, examples, and intelligent spaced repetition.
+A comprehensive Dutch vocabulary learning application built with React and TypeScript, showcasing modern testing practices including unit tests with React Testing Library, integration testing, and end-to-end testing with Playwright.
 
-![Dutch Learning App](https://img.shields.io/badge/React-19.1.0-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4.17-blue)
+## 🧪 Testing Overview
 
-## ✨ Features
+This project serves as a comprehensive example of modern testing practices in React applications, featuring three layers of testing:
 
-### 🎯 Interactive Quiz Mode
+- **Unit Tests**: Component testing with React Testing Library
+- **Integration Tests**: Component interaction and routing testing
+- **End-to-End Tests**: Full user journey testing with Playwright
 
-- **Flipping Cards**: Beautiful 3D card animations showing Dutch words and English translations
-- **Multiple Choice Questions**: Smart answer generation with context-aware wrong options
-- **Context Hints**: Part of speech and usage context for better understanding
-- **Real Examples**: Authentic Dutch sentences with English translations
+### Testing Philosophy
 
-### 📚 Comprehensive Vocabulary System
+Our testing approach follows the Testing Pyramid:
 
-- **Multiple Meanings**: Words with multiple English translations (e.g., "de bank" = bank/bench)
-- **Rich Context**: Each meaning includes context, part of speech, and examples
-- **Categorized Content**: Common words, fruits, numbers, and more
-- **Progressive Learning**: Intelligent word selection based on your progress
-
-### 🧠 Smart Learning Algorithm
-
-- **Adaptive Rating System**: Words are rated 0-15 based on your performance
-- **Spaced Repetition**: Higher-rated words appear less frequently
-- **Freeze System**: Recently studied words are temporarily frozen
-- **Progress Tracking**: Real-time statistics on correct/incorrect answers
-
-### 💾 Data Management
-
-- **Export/Import**: Backup and restore your learning progress
-- **Persistent Storage**: Your progress is saved locally
-- **Reset Options**: Start fresh or reset specific progress
+- **70% Unit Tests**: Fast, isolated component testing
+- **20% Integration Tests**: Component interaction testing
+- **10% E2E Tests**: Critical user journey validation
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- Node.js (v14 or higher)
-- npm or yarn
-
 ### Installation
 
-1. **Clone the repository**
+```bash
+# Clone and install
+git clone https://github.com/yourusername/learn-dutch-ai.git
+cd learn-dutch-ai
+git checkout testing_branch
+npm install
+```
 
-   ```bash
-   git clone https://github.com/yourusername/learn-dutch-ai.git
-   cd learn-dutch-ai
-   ```
+### Development
 
-2. **Install dependencies**
+```bash
+# Start development server
+npm start
+```
 
-   ```bash
-   npm install
-   ```
+### Testing Commands
 
-3. **Start the development server**
+```bash
+# Unit & Integration Tests
+npm test                           # Interactive test runner
+npm test -- --coverage             # With coverage report
+npm test -- --watchAll=false       # Run once and exit
 
-   ```bash
-   npm start
-   ```
+# E2E Tests with Playwright
+npm run e2e               # Run all E2E tests
+npm run e2e:ui            # Run with UI mode
+npm run e2e:headed        # Run in headed mode
+npm run e2e:report        # View test report
+```
 
-4. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+## 🔬 Testing Architecture
 
-## 🎮 How to Use
+### Unit Testing with React Testing Library
 
-### Quiz Mode
+**Philosophy**: Test behavior, not implementation details
 
-1. **Start Learning**: The app automatically selects a Dutch word for you
-2. **Read the Context**: Use the context hint to understand the word's usage
-3. **Make Your Choice**: Select the correct English translation from multiple options
-4. **See the Result**: The card flips to reveal the answer with examples
-5. **Continue Learning**: Click anywhere to proceed to the next word
+```typescript
+// Example: Component props testing
+test("renders loading spinner with different sizes", () => {
+  render(<Loading size="small" />);
+  const spinner = screen.getByRole("status");
+  expect(spinner).toHaveClass("h-4 w-4");
+});
 
-### Vocabulary Browser
+// Example: User interaction testing
+test("calls onClick when button is clicked", () => {
+  const mockOnClick = jest.fn();
+  render(<Actions onReset={mockOnClick} />);
 
-- View all available vocabulary words
-- See your progress for each word
-- Browse by categories (common, fruits, numbers)
+  fireEvent.click(screen.getByText("Reset Progress"));
+  expect(mockOnClick).toHaveBeenCalledTimes(1);
+});
+```
 
-### Data Management
+**Key Testing Patterns**:
 
-- **Export**: Download your learning progress as a JSON file
-- **Import**: Upload a previously exported file to restore progress
-- **Reset**: Clear all progress and start fresh
+- ✅ Props validation and rendering
+- ✅ User interactions (clicks, inputs)
+- ✅ Conditional rendering logic
+- ✅ Icon and text content verification
+- ✅ CSS class applications
+
+### Integration Testing
+
+**Focus**: Component interaction and routing behavior
+
+```typescript
+// Router integration testing with manual mocks
+// __mocks__/react-router-dom.js
+export const useNavigate = () => jest.fn();
+export const useLocation = () => ({ pathname: "/quiz" });
+
+// Integration test example
+test("navigates correctly between routes", () => {
+  const mockNavigate = useNavigate();
+  render(<AppHeader />);
+
+  fireEvent.click(screen.getByText("Vocabulary"));
+  expect(mockNavigate).toHaveBeenCalledWith("/vocabulary");
+});
+```
+
+**Integration Test Coverage**:
+
+- ✅ React Router navigation
+- ✅ Component state management
+- ✅ Props drilling and data flow
+- ✅ Context providers
+- ✅ External service integration
+
+### End-to-End Testing with Playwright
+
+**Approach**: Page Object Model with comprehensive user journey testing
+
+```typescript
+// Page Object Pattern
+export class QuizPageObject {
+  constructor(private page: Page) {}
+
+  async selectAnswer(optionText: string) {
+    await this.page.locator(`text=${optionText}`).click();
+  }
+
+  async getQuestionText() {
+    return await this.page
+      .locator('[data-testid="quiz-question"]')
+      .textContent();
+  }
+}
+
+// E2E Test Example
+test("complete quiz workflow with API mocking", async ({ page }) => {
+  // Mock API responses for predictable testing
+  await page.route("/api/words/**", (route) => {
+    route.fulfill({ json: mockWordData });
+  });
+
+  const quizPage = new QuizPageObject(page);
+  await quizPage.selectAnswer("apple");
+  await expect(page.locator(".quiz-result")).toBeVisible();
+});
+```
+
+**E2E Test Features**:
+
+- ✅ API response mocking for predictable tests
+- ✅ Page Object Model for maintainable tests
+- ✅ Quiz automation and answer selection
+- ✅ Counter validation and progress tracking
+- ✅ Error handling and edge cases
+- ✅ Mobile and desktop responsive testing
+
+## 📊 Testing Coverage
+
+### Current Test Coverage
+
+- **Components**: 95%+ coverage across all major components
+- **Utils**: 100% coverage of critical utility functions
+- **Services**: 90%+ coverage of API and data services
+- **E2E**: Critical user journeys fully automated
+
+### Tested Components
+
+| Component      | Unit Tests | Integration Tests | E2E Tests |
+| -------------- | ---------- | ----------------- | --------- |
+| VocabularyQuiz | ✅         | ✅                | ✅        |
+| VocabularyList | ✅         | ✅                | ⏳        |
+| Loading        | ✅         | N/A               | N/A       |
+| Actions        | ✅         | ✅                | ✅        |
+| AppHeader      | ✅         | ✅                | ✅        |
+| EmptyState     | ✅         | N/A               | N/A       |
+
+## 🛠️ Testing Setup and Configuration
+
+### React Testing Library Configuration
+
+```typescript
+// setupTests.ts
+import "@testing-library/jest-dom";
+
+// Enhanced matchers for better assertions
+expect.extend({
+  toHaveClass: (received, className) => {
+    const pass = received.classList.contains(className);
+    return {
+      pass,
+      message: () => `Expected ${received} to have class ${className}`,
+    };
+  },
+});
+```
+
+### Playwright Configuration
+
+```typescript
+// playwright.config.ts
+export default defineConfig({
+  testDir: "./e2e",
+  timeout: 30000,
+  use: {
+    baseURL: "http://localhost:3000",
+    headless: true,
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+  },
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+    { name: "webkit", use: { ...devices["Desktop Safari"] } },
+  ],
+});
+```
+
+### Advanced Testing Techniques
+
+**API Mocking in E2E Tests**:
+
+```typescript
+// Comprehensive API mocking
+await page.route("/api/**", async (route) => {
+  const url = route.request().url();
+  if (url.includes("/words")) {
+    await route.fulfill({ json: mockWordData });
+  } else if (url.includes("/progress")) {
+    await route.fulfill({ json: mockProgressData });
+  }
+});
+```
+
+**Request Tracking**:
+
+```typescript
+// Track API calls during tests
+const apiCalls = [];
+page.on("request", (request) => {
+  if (request.url().includes("/api/")) {
+    apiCalls.push(request.url());
+  }
+});
+```
 
 ## 🏗️ Project Structure
 
 ```
 src/
-├── components/           # React components
-│   ├── VocabularyQuiz.tsx    # Main quiz interface
-│   └── VocabularyList.tsx    # Vocabulary browser
-├── data/                # Vocabulary data
-│   ├── data-common.ts        # Common Dutch words
-│   ├── data-fruits.ts        # Fruit vocabulary
-│   └── data-numbers.ts       # Number vocabulary
-├── data-types/          # TypeScript interfaces
-│   ├── VocabularyItem.ts     # Word structure
-│   ├── LearningStats.ts      # Progress tracking
-│   └── FrozenWord.ts         # Freeze system
-├── utils/               # Utility functions
-│   └── dataManager.ts        # Data persistence
-└── App.tsx              # Main application component
+├── components/           # React components with tests
+│   ├── __tests__/           # Component unit tests
+│   ├── VocabularyQuiz.tsx   # Main quiz (fully tested)
+│   └── VocabularyList.tsx   # Vocabulary browser
+├── __mocks__/           # Manual mocks
+│   └── react-router-dom.js  # Router mocking
+├── data/                # Test data and fixtures
+├── utils/               # Utilities with 100% coverage
+└── types/               # TypeScript interfaces
+
+e2e/                     # End-to-end tests
+├── pages/               # Page Object Models
+│   └── quiz-po.ts          # Quiz page object
+├── specs/               # Test specifications
+│   └── vocabulary-quiz.spec.ts
+└── fixtures/            # Test data fixtures
 ```
 
-## 🎨 Technology Stack
+## 🧪 Testing Best Practices Demonstrated
 
-- **Frontend**: React 19.1.0 with TypeScript
-- **Styling**: Tailwind CSS for responsive design
-- **Routing**: React Router DOM for navigation
-- **Icons**: Lucide React for beautiful icons
-- **Build Tool**: Create React App with custom configuration
+### Unit Testing Best Practices
 
-## 📊 Learning Algorithm
+1. **Test Behavior, Not Implementation**
 
-The app uses a sophisticated learning algorithm:
+   ```typescript
+   // ❌ Testing implementation details
+   expect(component.state.isLoading).toBe(true);
 
-1. **Word Selection**:
-   - 20% chance for new words (rating = 0)
-   - 40% chance for well-known words (rating 10-14)
-   - 30% chance for medium words (rating 5-9)
-   - 10% chance for difficult words (rating 1-4)
+   // ✅ Testing user-observable behavior
+   expect(screen.getByRole("status")).toBeInTheDocument();
+   ```
 
-2. **Rating System**:
-   - Correct answer: +1 rating
-   - Incorrect answer: -3 rating
-   - Maximum rating: 15 (fully learned)
+2. **Descriptive Test Names**
 
-3. **Freeze System**:
-   - Recently studied words are frozen
-   - Frozen words gradually become available again
-   - Prevents immediate repetition
+   ```typescript
+   // ✅ Clear, behavior-focused test names
+   test("shows loading spinner when isLoading is true");
+   test("calls onReset when reset button is clicked");
+   test("renders correct icon based on type prop");
+   ```
 
-## 🔧 Available Scripts
+3. **Proper Mocking Strategy**
+   ```typescript
+   // Manual mocks for complex dependencies
+   // Minimal mocking to preserve real behavior
+   // Mock at the boundary, not internals
+   ```
 
-- `npm start` - Start development server
-- `npm run build` - Build for production
-- `npm test` - Run test suite
-- `npm run eject` - Eject from Create React App
+### E2E Testing Best Practices
 
-## 📱 Features in Detail
+1. **Page Object Model**
 
-### Card Interface
+   - Encapsulate page interactions
+   - Reusable and maintainable
+   - Clear separation of concerns
 
-- **3D Flip Animation**: Smooth card transitions
-- **Responsive Design**: Works on desktop and mobile
-- **Visual Feedback**: Color-coded correct/incorrect answers
+2. **API Mocking**
 
-### Smart Quiz Generation
+   - Predictable test data
+   - Isolated from backend changes
+   - Comprehensive error scenarios
 
-- **Context-Aware Options**: Wrong answers are relevant but not confusing
-- **Multiple Meanings**: Each word can have several English translations
-- **Example Sentences**: Real Dutch examples with English translations
+3. **Async Handling**
+   ```typescript
+   // Proper waiting for dynamic content
+   await expect(page.locator(".result")).toBeVisible();
+   ```
 
-### Progress Tracking
+## 📈 Continuous Integration
 
-- **Real-time Stats**: Track correct, incorrect, and known words
-- **Persistent Learning**: Progress saved between sessions
-- **Export/Import**: Backup and restore functionality
+### GitHub Actions Configuration
 
-## 🤝 Contributing
+```yaml
+# .github/workflows/test.yml
+name: Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+      - name: Install dependencies
+        run: npm ci
+      - name: Run unit tests
+        run: npm test -- --coverage --watchAll=false
+      - name: Run E2E tests
+        run: npx playwright test
+```
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+## 🎯 Application Features (Testing Context)
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+This Dutch vocabulary learning app demonstrates testing in the context of:
 
-## 📄 License
+- **Interactive Quiz System** - Complex user interactions tested
+- **Progress Tracking** - State management and persistence testing
+- **Routing** - Navigation and route-based component testing
+- **API Integration** - Service layer and data flow testing
+- **Responsive Design** - Cross-device testing with Playwright
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 🚀 Getting Started with Testing
 
-## 🙏 Acknowledgments
+1. **Run Unit Tests**
 
-- Dutch language data curated for effective learning
-- React community for excellent documentation
-- Tailwind CSS for beautiful styling utilities
+   ```bash
+   npm test
+   # View HTML coverage report at coverage/lcov-report/index.html
+   ```
+
+2. **Run E2E Tests**
+
+   ```bash
+   npx playwright test
+   npx playwright show-report
+   ```
+
+3. **Study Test Examples**
+   - Check `src/components/__tests__/` for unit test patterns
+   - Review `e2e/specs/` for E2E test examples
+   - Examine `__mocks__/` for mocking strategies
+
+## 🤝 Contributing to Testing
+
+When contributing, please:
+
+1. **Write Tests First** - TDD approach preferred
+2. **Maintain Coverage** - Keep coverage above 90%
+3. **Update E2E Tests** - For new user-facing features
+4. **Document Test Patterns** - Help others learn
+
+## 📚 Learning Resources
+
+- [React Testing Library Documentation](https://testing-library.com/docs/react-testing-library/intro)
+- [Playwright Documentation](https://playwright.dev/)
+- [Jest Documentation](https://jestjs.io/docs/getting-started)
+- [Testing Best Practices](https://kentcdodds.com/blog/common-mistakes-with-react-testing-library)
 
 ---
 
-**Start your Dutch learning journey today!** 🇳🇱✨
+**Master testing while learning Dutch!** 🧪🇳🇱

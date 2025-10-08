@@ -24,8 +24,16 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "test:ci": "react-scripts test --coverage --watchAll=false --ci",
+    "test:watch": "react-scripts test --watch",
     "eject": "react-scripts eject",
-    "e2e": "npx playwright test"
+    "e2e": "npx playwright test",
+    "e2e:headed": "npx playwright test --headed",
+    "e2e:ui": "npx playwright test --ui",
+    "e2e:report": "npx playwright show-report",
+    "test:all": "npm run test:coverage && npm run e2e",
+    "test:install": "npx playwright install"
   },
   "eslintConfig": {
     "extends": [
