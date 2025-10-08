@@ -30,6 +30,13 @@ git checkout testing_branch
 npm install
 ```
 
+for smoke tests need a backend
+
+```bash
+git clone https://github.com/anisa07/learning-language-api
+git checkout language-api
+```
+
 ### Development
 
 ```bash
