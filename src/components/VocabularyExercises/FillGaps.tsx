@@ -119,7 +119,7 @@ const FillGaps: React.FC<FillGapsProps> = ({
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto" data-testid="fill-gap-exercises">
       {/* Header */}
       <div className="bg-gradient-to-br from-background via-secondary/10 to-brand-50 rounded-2xl shadow-xl border border-secondary/20 p-6 mb-8">
         <div className="text-center">

@@ -66,6 +66,7 @@ const VocabularyStatsDashboard: React.FC<VocabularyStatsDashboardProps> = ({
 
   return (
     <div
+      data-testid="vocabulary-stats-dashboard"
       className={`bg-gradient-to-br from-white via-brand-50 to-brand-100 rounded-2xl shadow-2xl border border-brand-100 p-8 mb-8 ${className}`}
     >
       <div className="text-center mb-6">

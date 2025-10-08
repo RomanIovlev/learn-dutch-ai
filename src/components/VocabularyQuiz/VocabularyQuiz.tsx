@@ -244,7 +244,7 @@ const VocabularyQuiz: React.FC<VocabularyQuizProps> = ({ userId }) => {
           />
 
           {/* Instructions */}
-          <div className="card mb-6">
+          <div className="card mb-6" data-testid="instructions">
             <div className="card-body text-center">
               {!showResult && (
                 <p className="text-lg font-medium text-brand-700">

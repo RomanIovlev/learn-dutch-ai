@@ -91,7 +91,7 @@ const FillExercises: React.FC<FillExercisesProps> = ({
   };
 
   return (
-    <>
+    <div data-testid="fill-form-exercises">
       {fillExercises.map((exercise) => (
         <div
           key={exercise.id}
@@ -133,7 +133,7 @@ const FillExercises: React.FC<FillExercisesProps> = ({
           Verify Resulsts
         </button>
       </div>
-    </>
+    </div>
   );
 };
 

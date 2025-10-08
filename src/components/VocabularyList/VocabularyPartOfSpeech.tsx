@@ -9,7 +9,10 @@ export const VocabularyPartOfSpeech = ({
   onSetWordPartOfSpeech: (partOfSpeech: PartOfSpeech | "all") => void;
 }) => {
   return (
-    <div className="flex flex-wrap gap-2 my-4">
+    <div
+      className="flex flex-wrap gap-2 my-4"
+      data-testid="vocabulary-part-of-speech"
+    >
       {[...ALL_PARTS_OF_SPEECH, "all"].map((part) => (
         <button
           key={part}

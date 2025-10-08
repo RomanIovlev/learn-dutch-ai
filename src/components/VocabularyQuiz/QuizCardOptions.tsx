@@ -40,7 +40,10 @@ export const QuizCardOptions = ({
   };
 
   return (
-    <div className="transition-all duration-500 opacity-100 translate-y-0">
+    <div
+      className="transition-all duration-500 opacity-100 translate-y-0"
+      data-testid="quiz-options"
+    >
       <div className="grid grid-cols-2 gap-4 mb-6">
         {options.map((option, index) => (
           <button

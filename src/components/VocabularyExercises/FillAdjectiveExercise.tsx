@@ -22,7 +22,7 @@ export const FillAdjectiveExercise = ({
           onChange={(value) => {
             onUpdateExercise(exercise.id, { deForm: value as string });
           }}
-          placeholder="Definite form"
+          placeholder="kleine"
         />
         <ExerciseInput
           dataTestId="comparative"
@@ -33,7 +33,7 @@ export const FillAdjectiveExercise = ({
               comparison: value as string,
             });
           }}
-          placeholder="Comparative form"
+          placeholder="kleiner"
         />
         <ExerciseInput
           dataTestId="superlative"
@@ -44,7 +44,7 @@ export const FillAdjectiveExercise = ({
               superlative: value as string,
             });
           }}
-          placeholder="Superlative form"
+          placeholder="kleinst"
         />
       </div>
     </div>

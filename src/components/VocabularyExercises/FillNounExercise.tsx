@@ -22,7 +22,7 @@ export const FillNounExercise = ({
           onChange={(value) => {
             onUpdateExercise(exercise.id, { plural: value as string });
           }}
-          placeholder="Plural form"
+          placeholder="katten"
         />
         <ExerciseInput
           dataTestId="diminutive"
@@ -33,7 +33,7 @@ export const FillNounExercise = ({
               diminutive: value as string,
             });
           }}
-          placeholder="Diminutive form"
+          placeholder="katje"
         />
       </div>
     </div>

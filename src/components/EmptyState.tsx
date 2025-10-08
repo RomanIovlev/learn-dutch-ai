@@ -16,7 +16,10 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   icon = "🔍",
 }) => {
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-12 text-center border-2 border-dashed border-gray-300">
+    <div
+      data-testid="empty-state"
+      className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-12 text-center border-2 border-dashed border-gray-300"
+    >
       <div className="text-6xl mb-4">{icon}</div>
       <h3 className="text-xl font-semibold text-secondary mb-2">{title}</h3>
       {description && <p className="text-secondary mb-4">{description}</p>}

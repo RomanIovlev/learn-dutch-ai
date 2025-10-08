@@ -129,7 +129,10 @@ const VocabularyList: React.FC<VocabularyListProps> = ({ userId }) => {
         onSortChange={setSortBy}
       />
 
-      <div className="mb-6 flex items-center justify-between">
+      <div
+        className="mb-6 flex items-center justify-between"
+        data-testid="vocabulary-stats"
+      >
         <div>
           <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
             📚 Vocabulary Collection

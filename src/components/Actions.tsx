@@ -14,7 +14,10 @@ export const Actions = ({
     onResetQuiz();
   };
   return (
-    <div className="flex justify-center items-center gap-2 w-full ">
+    <div
+      className="flex justify-center items-center gap-2 w-full"
+      data-testid="actions"
+    >
       {isShowApply && (
         <button onClick={onUpdateResult} className="btn-primary max-w-48">
           Apply progress

@@ -8,7 +8,7 @@ export const ExerciseSelector = ({
   onExerciseTypeChange: (switchType: SelectorType) => void;
 }) => {
   return (
-    <div className="mb-6 flex justify-center">
+    <div className="mb-6 flex justify-center" data-testid="exercise-selector">
       <div className="bg-background rounded-xl shadow-md border border-border p-2 flex gap-2">
         <button
           onClick={() => onExerciseTypeChange("fill_forms")}

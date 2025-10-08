@@ -8,7 +8,7 @@ export const QuizCardResults = ({
   currentQuizItem: VocabularyItem;
 }) => {
   return (
-    <div className="card hover-lift mb-6">
+    <div className="card hover-lift mb-6" data-testid="quiz-result">
       <div className="card-body text-center">
         <div
           className={`text-2xl font-bold mb-2 ${

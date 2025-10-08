@@ -131,6 +131,7 @@ const VocabularyItemCard: React.FC<VocabularyItemCardProps> = ({
         selectedCard === item.id ? "z-[9998] ring-indigo-400 shadow-xl" : "z-10"
       }`}
       data-card-details
+      data-testid="vocabulary-item-card"
     >
       <div
         className={`absolute top-0 left-0 w-full h-1 ${

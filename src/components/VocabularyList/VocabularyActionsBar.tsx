@@ -21,7 +21,10 @@ const VocabularyActionsBar: React.FC<VocabularyActionsBarProps> = ({
   }
 
   return (
-    <div className="fixed py-4 px-6 bottom-0 left-0 right-0 z-[9999] border-t-2 border-brand-200 bg-gradient-to-br from-white via-brand-50 to-brand-100 shadow-2xl backdrop-blur-sm">
+    <div
+      data-testid="vocabulary-actions-bar"
+      className="fixed py-4 px-6 bottom-0 left-0 right-0 z-[9999] border-t-2 border-brand-200 bg-gradient-to-br from-white via-brand-50 to-brand-100 shadow-2xl backdrop-blur-sm"
+    >
       <div className="max-w-6xl mx-auto flex items-center justify-center">
         <button
           onClick={onSubmit}

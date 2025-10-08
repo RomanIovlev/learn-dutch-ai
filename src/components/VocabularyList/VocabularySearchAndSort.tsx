@@ -24,6 +24,7 @@ const VocabularySearchAndSort: React.FC<VocabularySearchAndSortProps> = ({
 }) => {
   return (
     <div
+      data-testid="vocabulary-search-and-sort"
       className={`bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-8 ${className}`}
     >
       <div className="flex flex-col md:flex-row gap-4 items-center">
